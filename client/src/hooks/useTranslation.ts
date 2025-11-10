@@ -11,15 +11,52 @@ const translations: Record<string, Record<string, any>> = {
       logout: "Logout"
     },
     landing: {
-      title: "Bedtime Stories, Personalized",
-      subtitle: "Create magical audio stories for your children in their language, featuring them as the hero",
-      cta: "Start Creating Stories",
-      feature1: "Personalized Characters",
-      feature1Desc: "Feature your child and their friends in every story",
-      feature2: "Multilingual Audio",
-      feature2Desc: "Stories in English, Spanish, French, and Latvian",
-      feature3: "AI-Powered Magic",
-      feature3Desc: "Unique stories every time, tailored to your choices"
+      seo: {
+        title: "Personalized Audio Bedtime Stories for Children | Magical Storytelling in 4 Languages",
+        description: "Create magical 10-minute audio bedtime stories featuring your child as the hero. AI-powered personalization in English, Spanish, French & Latvian. Start with 3 free credits!"
+      },
+      title: "Bedtime Stories, Starring Your Child",
+      subtitle: "Magical, 10-minute audio stories in your language, ready for bedtime. Personalized in seconds.",
+      cta: "Start Your First Story (3 Free Credits)",
+      ctaButton: "Get Started",
+      howItWorks: {
+        title: "Create Magic in 3 Simple Steps",
+        step1Title: "Personalize",
+        step1Desc: "Add your child's name, friends, and even pets to be the stars of the story.",
+        step2Title: "Generate",
+        step2Desc: "Choose a magical theme like 'Space Adventure' or write your own custom story idea.",
+        step3Title: "Listen",
+        step3Desc: "Get a 10-minute, high-quality audio story in your language, ready for bedtime."
+      },
+      feature1: {
+        badge: "For Every Family",
+        title: "In Your Language, In Your Voice",
+        desc: "Our stories sound natural, not robotic. Thanks to our advanced AI editor, you get grammatically perfect stories in Latvian, Spanish, French, and English."
+      },
+      feature2: {
+        badge: "Truly Personal",
+        title: "Your Child is the Star of the Show",
+        desc: "Go beyond just a name. Add siblings, friends, and even family pets to join the adventure. Choose from illustrated themes or write your own unique story."
+      },
+      upsell: {
+        title: "Even More Magic is Coming Soon",
+        voiceTitle: "Read in Your Voice",
+        voiceDesc: "Our most-requested feature. Securely clone your own voice to become the narrator of every magical story.",
+        bookTitle: "A Book to Keep Forever",
+        bookDesc: "Turn your child's favorite generated story into a beautiful, professionally printed hardcover book. The perfect gift."
+      },
+      pricing: {
+        title: "Choose Your Adventure",
+        subtitle: "Start for free. Buy credits as you go. No subscriptions, no hidden fees. Your credits never expire.",
+        getStarted: "Get Started",
+        stories: "stories",
+        unlimitedPreviews: "Unlimited story previews",
+        saveForever: "Save stories forever"
+      },
+      finalCta: {
+        title: "Give the Gift of Imagination",
+        subtitle: "Your first 3 stories are on us. Create an account and make bedtime magical tonight."
+      }
     },
     themes: {
       "Space Adventure": "Space Adventure",
@@ -64,11 +101,17 @@ const translations: Record<string, Record<string, any>> = {
     credits: {
       title: "Buy Credits",
       current: "Current Balance",
+      label: "Credits",
       popular: "Most Popular",
       buy: "Buy Now",
       feature1: "Unlimited story previews",
       feature2: "High-quality audio generation",
-      feature3: "Save stories forever"
+      feature3: "Save stories forever",
+      feature: {
+        audio: "audio stories",
+        previews: "Unlimited story previews",
+        save: "Save stories forever"
+      }
     },
     errors: {
       noCredits: "You're out of credits! Purchase more to continue.",
@@ -87,15 +130,52 @@ const translations: Record<string, Record<string, any>> = {
       logout: "Izrakstīties"
     },
     landing: {
-      title: "Personalizēti Gulēšanas Stāsti",
-      subtitle: "Izveidojiet maģiskus audio stāstus saviem bērniem viņu valodā",
-      cta: "Sākt Veidot Stāstus",
-      feature1: "Personalizēti Varoņi",
-      feature1Desc: "Iekļaujiet savu bērnu un viņa draugus katrā stāstā",
-      feature2: "Daudzvalodu Audio",
-      feature2Desc: "Stāsti angļu, spāņu, franču un latviešu valodā",
-      feature3: "AI Maģija",
-      feature3Desc: "Unikāli stāsti katru reizi"
+      seo: {
+        title: "Personalizēti Audio Gulēšanas Stāsti Bērniem | Maģiska Stāstu Stāstīšana 4 Valodās",
+        description: "Izveidojiet maģiskus 10 minūšu audio gulēšanas stāstus, kuros jūsu bērns ir varonis. AI personalizācija latviešu, angļu, spāņu un franču valodās. Sāciet ar 3 bezmaksas kredītiem!"
+      },
+      title: "Gulēšanas Stāsti ar Jūsu Bērnu Galvenajā Lomā",
+      subtitle: "Maģiski, 10 minūšu audio stāsti jūsu valodā, gatavi gulēšanai. Personalizēti sekundēs.",
+      cta: "Sāciet Savu Pirmo Stāstu (3 Bezmaksas Kredīti)",
+      ctaButton: "Sākt",
+      howItWorks: {
+        title: "Radiet Maģiju 3 Vienkāršos Soļos",
+        step1Title: "Personalizējiet",
+        step1Desc: "Pievienojiet sava bērna vārdu, draugus un pat mājdzīvniekus, lai viņi būtu stāsta zvaigznes.",
+        step2Title: "Ģenerējiet",
+        step2Desc: "Izvēlieties maģisku tēmu, piemēram, 'Kosmosa Piedzīvojums', vai uzrakstiet savu stāsta ideju.",
+        step3Title: "Klausieties",
+        step3Desc: "Saņemiet 10 minūšu, augstas kvalitātes audio stāstu savā valodā, gatavu gulēšanai."
+      },
+      feature1: {
+        badge: "Katrai Ģimenei",
+        title: "Jūsu Valodā, Jūsu Balsī",
+        desc: "Mūsu stāsti skan dabīgi, nevis robotiski. Pateicoties mūsu progresīvajam AI redaktoram, jūs saņemat gramatiski perfektus stāstus latviešu, spāņu, franču un angļu valodās."
+      },
+      feature2: {
+        badge: "Patiesi Personisks",
+        title: "Jūsu Bērns ir Šova Zvaigzne",
+        desc: "Ejiet tālāk par vienkārši vārdu. Pievienojiet brāļus/māsas, draugus un pat ģimenes mājdzīvniekus piedzīvojumam. Izvēlieties no ilustrētām tēmām vai uzrakstiet savu unikālo stāstu."
+      },
+      upsell: {
+        title: "Vēl Vairāk Maģijas Drīzumā",
+        voiceTitle: "Lasiet Savā Balsī",
+        voiceDesc: "Mūsu visvairāk pieprasītā funkcija. Droši klonējiet savu balsi, lai kļūtu par katra maģiskā stāsta stāstītāju.",
+        bookTitle: "Grāmata, Ko Paturēt Mūžīgi",
+        bookDesc: "Pārvērtiet sava bērna iecienītāko ģenerēto stāstu skaistā, profesionāli iespiestā cietā vāka grāmatā. Ideāla dāvana."
+      },
+      pricing: {
+        title: "Izvēlieties Savu Piedzīvojumu",
+        subtitle: "Sāciet bez maksas. Pērciet kredītus pēc vajadzības. Nav abonementu, nav slēptu maksu. Jūsu kredīti nekad nebeidzas.",
+        getStarted: "Sākt",
+        stories: "stāsti",
+        unlimitedPreviews: "Neierobežoti stāstu priekšskatījumi",
+        saveForever: "Saglabāt stāstus uz visiem laikiem"
+      },
+      finalCta: {
+        title: "Dāviniet Iztēles Dāvanu",
+        subtitle: "Jūsu pirmie 3 stāsti ir no mums. Izveidojiet kontu un padariet gulēšanu maģisku šovakar."
+      }
     },
     themes: {
       "Space Adventure": "Kosmosa Piedzīvojums",
@@ -140,11 +220,17 @@ const translations: Record<string, Record<string, any>> = {
     credits: {
       title: "Pirkt Kredītus",
       current: "Pašreizējais Atlikums",
+      label: "Kredīti",
       popular: "Populārākais",
       buy: "Pirkt Tagad",
       feature1: "Neierobežoti stāstu priekšskatījumi",
       feature2: "Augstas kvalitātes audio ģenerēšana",
-      feature3: "Saglabāt stāstus uz visiem laikiem"
+      feature3: "Saglabāt stāstus uz visiem laikiem",
+      feature: {
+        audio: "audio stāsti",
+        previews: "Neierobežoti stāstu priekšskatījumi",
+        save: "Saglabāt stāstus uz visiem laikiem"
+      }
     },
     errors: {
       noCredits: "Jums vairs nav kredītu! Iegādājieties vairāk, lai turpinātu.",
@@ -163,15 +249,52 @@ const translations: Record<string, Record<string, any>> = {
       logout: "Cerrar Sesión"
     },
     landing: {
-      title: "Cuentos Personalizados para Dormir",
-      subtitle: "Crea historias de audio mágicas para tus hijos en su idioma",
-      cta: "Comenzar a Crear Historias",
-      feature1: "Personajes Personalizados",
-      feature1Desc: "Presenta a tu hijo y sus amigos en cada historia",
-      feature2: "Audio Multilingüe",
-      feature2Desc: "Historias en inglés, español, francés y letón",
-      feature3: "Magia con IA",
-      feature3Desc: "Historias únicas cada vez"
+      seo: {
+        title: "Cuentos de Audio Personalizados para Niños | Narración Mágica en 4 Idiomas",
+        description: "Crea cuentos de audio mágicos de 10 minutos con tu hijo como protagonista. Personalización con IA en español, inglés, francés y letón. ¡Comienza con 3 créditos gratis!"
+      },
+      title: "Cuentos para Dormir, Protagonizados por tu Hijo",
+      subtitle: "Historias de audio mágicas de 10 minutos en tu idioma, listas para la hora de dormir. Personalizadas en segundos.",
+      cta: "Comienza tu Primera Historia (3 Créditos Gratis)",
+      ctaButton: "Empezar",
+      howItWorks: {
+        title: "Crea Magia en 3 Pasos Simples",
+        step1Title: "Personalizar",
+        step1Desc: "Agrega el nombre de tu hijo, amigos e incluso mascotas para que sean las estrellas de la historia.",
+        step2Title: "Generar",
+        step2Desc: "Elige un tema mágico como 'Aventura Espacial' o escribe tu propia idea de historia personalizada.",
+        step3Title: "Escuchar",
+        step3Desc: "Obtén una historia de audio de alta calidad de 10 minutos en tu idioma, lista para la hora de dormir."
+      },
+      feature1: {
+        badge: "Para Cada Familia",
+        title: "En Tu Idioma, Con Tu Voz",
+        desc: "Nuestras historias suenan naturales, no robóticas. Gracias a nuestro editor de IA avanzado, obtienes historias gramaticalmente perfectas en letón, español, francés e inglés."
+      },
+      feature2: {
+        badge: "Verdaderamente Personal",
+        title: "Tu Hijo es la Estrella del Espectáculo",
+        desc: "Ve más allá de solo un nombre. Agrega hermanos, amigos e incluso mascotas familiares para unirse a la aventura. Elige entre temas ilustrados o escribe tu propia historia única."
+      },
+      upsell: {
+        title: "Aún Más Magia Próximamente",
+        voiceTitle: "Lee con Tu Voz",
+        voiceDesc: "Nuestra función más solicitada. Clona tu propia voz de forma segura para convertirte en el narrador de cada historia mágica.",
+        bookTitle: "Un Libro para Guardar Siempre",
+        bookDesc: "Convierte la historia generada favorita de tu hijo en un hermoso libro de tapa dura impreso profesionalmente. El regalo perfecto."
+      },
+      pricing: {
+        title: "Elige Tu Aventura",
+        subtitle: "Comienza gratis. Compra créditos según necesites. Sin suscripciones, sin tarifas ocultas. Tus créditos nunca expiran.",
+        getStarted: "Empezar",
+        stories: "historias",
+        unlimitedPreviews: "Vistas previas ilimitadas",
+        saveForever: "Guarda historias para siempre"
+      },
+      finalCta: {
+        title: "Regala el Don de la Imaginación",
+        subtitle: "Tus primeras 3 historias corren por nuestra cuenta. Crea una cuenta y haz que la hora de dormir sea mágica esta noche."
+      }
     },
     themes: {
       "Space Adventure": "Aventura Espacial",
@@ -216,11 +339,17 @@ const translations: Record<string, Record<string, any>> = {
     credits: {
       title: "Comprar Créditos",
       current: "Saldo Actual",
+      label: "Créditos",
       popular: "Más Popular",
       buy: "Comprar Ahora",
       feature1: "Vistas previas ilimitadas",
       feature2: "Generación de audio de alta calidad",
-      feature3: "Guarda historias para siempre"
+      feature3: "Guarda historias para siempre",
+      feature: {
+        audio: "historias de audio",
+        previews: "Vistas previas ilimitadas",
+        save: "Guarda historias para siempre"
+      }
     },
     errors: {
       noCredits: "¡Te quedaste sin créditos! Compra más para continuar.",
@@ -239,15 +368,52 @@ const translations: Record<string, Record<string, any>> = {
       logout: "Se Déconnecter"
     },
     landing: {
-      title: "Histoires Personnalisées pour le Coucher",
-      subtitle: "Créez des histoires audio magiques pour vos enfants dans leur langue",
-      cta: "Commencer à Créer des Histoires",
-      feature1: "Personnages Personnalisés",
-      feature1Desc: "Mettez en vedette votre enfant et ses amis dans chaque histoire",
-      feature2: "Audio Multilingue",
-      feature2Desc: "Histoires en anglais, espagnol, français et letton",
-      feature3: "Magie de l'IA",
-      feature3Desc: "Des histoires uniques à chaque fois"
+      seo: {
+        title: "Histoires Audio Personnalisées pour Enfants | Narration Magique en 4 Langues",
+        description: "Créez des histoires audio magiques de 10 minutes avec votre enfant en héros. Personnalisation IA en français, anglais, espagnol et letton. Commencez avec 3 crédits gratuits !"
+      },
+      title: "Histoires pour le Coucher, Vedettant Votre Enfant",
+      subtitle: "Histoires audio magiques de 10 minutes dans votre langue, prêtes pour le coucher. Personnalisées en quelques secondes.",
+      cta: "Commencez Votre Première Histoire (3 Crédits Gratuits)",
+      ctaButton: "Commencer",
+      howItWorks: {
+        title: "Créez de la Magie en 3 Étapes Simples",
+        step1Title: "Personnaliser",
+        step1Desc: "Ajoutez le nom de votre enfant, ses amis et même ses animaux de compagnie pour qu'ils soient les stars de l'histoire.",
+        step2Title: "Générer",
+        step2Desc: "Choisissez un thème magique comme 'Aventure Spatiale' ou écrivez votre propre idée d'histoire personnalisée.",
+        step3Title: "Écouter",
+        step3Desc: "Obtenez une histoire audio de haute qualité de 10 minutes dans votre langue, prête pour le coucher."
+      },
+      feature1: {
+        badge: "Pour Chaque Famille",
+        title: "Dans Votre Langue, Avec Votre Voix",
+        desc: "Nos histoires sonnent naturelles, pas robotiques. Grâce à notre éditeur IA avancé, vous obtenez des histoires grammaticalement parfaites en letton, espagnol, français et anglais."
+      },
+      feature2: {
+        badge: "Vraiment Personnel",
+        title: "Votre Enfant est la Star du Spectacle",
+        desc: "Allez au-delà d'un simple nom. Ajoutez des frères et sœurs, des amis et même des animaux de compagnie pour rejoindre l'aventure. Choisissez parmi des thèmes illustrés ou écrivez votre propre histoire unique."
+      },
+      upsell: {
+        title: "Encore Plus de Magie Bientôt",
+        voiceTitle: "Lisez avec Votre Voix",
+        voiceDesc: "Notre fonctionnalité la plus demandée. Clonez votre propre voix en toute sécurité pour devenir le narrateur de chaque histoire magique.",
+        bookTitle: "Un Livre à Garder Pour Toujours",
+        bookDesc: "Transformez l'histoire générée préférée de votre enfant en un beau livre relié imprimé professionnellement. Le cadeau parfait."
+      },
+      pricing: {
+        title: "Choisissez Votre Aventure",
+        subtitle: "Commencez gratuitement. Achetez des crédits selon vos besoins. Pas d'abonnements, pas de frais cachés. Vos crédits n'expirent jamais.",
+        getStarted: "Commencer",
+        stories: "histoires",
+        unlimitedPreviews: "Aperçus illimités",
+        saveForever: "Sauvegardez les histoires pour toujours"
+      },
+      finalCta: {
+        title: "Offrez le Cadeau de l'Imagination",
+        subtitle: "Vos 3 premières histoires sont offertes. Créez un compte et rendez le coucher magique ce soir."
+      }
     },
     themes: {
       "Space Adventure": "Aventure Spatiale",
@@ -292,11 +458,17 @@ const translations: Record<string, Record<string, any>> = {
     credits: {
       title: "Acheter des Crédits",
       current: "Solde Actuel",
+      label: "Crédits",
       popular: "Le Plus Populaire",
       buy: "Acheter Maintenant",
       feature1: "Aperçus illimités",
       feature2: "Génération audio haute qualité",
-      feature3: "Sauvegardez les histoires pour toujours"
+      feature3: "Sauvegardez les histoires pour toujours",
+      feature: {
+        audio: "histoires audio",
+        previews: "Aperçus illimités",
+        save: "Sauvegardez les histoires pour toujours"
+      }
     },
     errors: {
       noCredits: "Vous n'avez plus de crédits ! Achetez-en plus pour continuer.",
