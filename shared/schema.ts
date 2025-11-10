@@ -109,7 +109,7 @@ export const LANGUAGE_OPTIONS: LanguageOption[] = [
     name: "Latviešu",
     code: "lv",
     country: "LV",
-    elevenLabsVoiceId: "XB0fDUnXU5powFXDhCwa" // Charlotte (professional, clear)
+    elevenLabsVoiceId: "TX3LPaxmHKxFdv7VOQHJ" // Liam
   },
   {
     name: "Español",
