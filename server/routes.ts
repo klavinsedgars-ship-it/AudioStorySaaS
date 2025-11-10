@@ -7,6 +7,7 @@ import { fromError } from "zod-validation-error";
 import { LANGUAGE_OPTIONS, CREDIT_PACKAGES } from "@shared/schema";
 import Stripe from "stripe";
 import { Client } from "@replit/object-storage";
+import OpenAI from "openai";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -17,6 +18,9 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 
 // Singleton Object Storage client
 const objectStorageClient = new Client({ bucketId: process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID });
+
+// Singleton OpenAI client
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 // Rate limiting - simple in-memory implementation
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -332,6 +336,157 @@ async function streamAudioFile(audioPath: string, req: any, res: any, isPublic: 
   } catch (error: any) {
     console.error("Audio streaming error:", error);
     res.status(404).send("Audio file not found");
+  }
+}
+
+// Background job: Generate and save audio (with retry logic)
+async function generateAndSaveAudio(storyId: string, storyText: string, language: string): Promise<void> {
+  const maxRetries = 3;
+  const retryDelays = [500, 1500, 3000];
+  
+  try {
+    await storage.updateStoryStatus(storyId, 'gen_audio');
+    console.log(`[AUDIO] Starting audio generation for story ${storyId}`);
+    
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Generate audio
+        const audioBuffer = await generateAudioFromText(storyText, language);
+        
+        // Upload to storage
+        const filename = `story-${storyId}-${Date.now()}.mp3`;
+        const audioPath = await uploadAudioToStorage(audioBuffer, filename);
+        
+        // Update database
+        await storage.updateStoryAudio(storyId, audioPath);
+        await storage.updateStoryStatus(storyId, 'gen_image');
+        
+        console.log(`[AUDIO] Successfully generated audio for story ${storyId}`);
+        return;
+      } catch (error: any) {
+        lastError = error;
+        console.error(`[AUDIO] Attempt ${attempt + 1}/${maxRetries} failed for story ${storyId}:`, error.message);
+        
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
+        }
+      }
+    }
+    
+    // All retries exhausted
+    console.error(`[AUDIO] All retries exhausted for story ${storyId}`);
+    await storage.updateStoryStatus(storyId, 'failed_audio');
+  } catch (error: any) {
+    console.error(`[AUDIO] Fatal error for story ${storyId}:`, error);
+    await storage.updateStoryStatus(storyId, 'failed_audio');
+  }
+}
+
+// Background job: Generate and save illustration (with retry logic)
+async function generateAndSaveIllustration(storyId: string, storyText: string, heroName: string): Promise<void> {
+  const maxRetries = 2;
+  const retryDelays = [1000, 3000];
+  
+  try {
+    // Wait for audio generation to complete
+    console.log(`[IMAGE] Waiting for audio generation to complete for story ${storyId}`);
+    let story = await storage.getStory(storyId);
+    let waitAttempts = 0;
+    const maxWaitAttempts = 60; // 2 minutes max wait
+    
+    while (story && story.status !== 'gen_image' && waitAttempts < maxWaitAttempts) {
+      if (story.status === 'failed_audio') {
+        console.log(`[IMAGE] Audio generation failed for story ${storyId}, skipping image generation`);
+        return;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      story = await storage.getStory(storyId);
+      waitAttempts++;
+    }
+    
+    if (!story || story.status !== 'gen_image') {
+      console.error(`[IMAGE] Timed out waiting for audio generation for story ${storyId}`);
+      return;
+    }
+    
+    console.log(`[IMAGE] Starting image generation for story ${storyId}`);
+    
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Step 1: Create image prompt using gpt-4o-mini
+        const summarizerPrompt = `You are an AI assistant for a children's storybook app.
+Summarize the following story text into a single, visually descriptive DALL-E 3 prompt.
+Style: "A whimsical, magical, children's book illustration"
+Example: "A whimsical, magical, children's book illustration of a young boy named Leo and his pet dog flying in a rocket ship past a smiling, ringed planet."
+
+STORY TEXT:
+${storyText.substring(0, 1500)}...`;
+
+        const summaryResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: summarizerPrompt }],
+          temperature: 0.2,
+        });
+        
+        const imagePrompt = summaryResponse.choices[0].message.content || "A whimsical children's book illustration";
+        console.log(`[IMAGE] Generated image prompt for story ${storyId}: ${imagePrompt.substring(0, 100)}...`);
+        
+        // Step 2: Generate image with DALL-E 3
+        const imageResponse = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: imagePrompt,
+          n: 1,
+          size: "1024x1024",
+        });
+        
+        if (!imageResponse.data || !imageResponse.data[0] || !imageResponse.data[0].url) {
+          throw new Error("No image URL returned from DALL-E 3");
+        }
+        
+        const tempImageUrl = imageResponse.data[0].url;
+        
+        // Step 3: Download image from temporary URL
+        const imageFetch = await fetch(tempImageUrl);
+        if (!imageFetch.ok) {
+          throw new Error(`Failed to download image: ${imageFetch.statusText}`);
+        }
+        
+        const imageBuffer = await imageFetch.arrayBuffer();
+        
+        // Step 4: Upload to our storage
+        const imageFilename = `story-${storyId}-illustration.png`;
+        const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
+        const imageFullPath = `${privateDir}/${imageFilename}`;
+        const buffer = Buffer.from(imageBuffer);
+        await objectStorageClient.uploadFromBytes(imageFullPath, buffer);
+        
+        // Step 5: Update database with image path
+        await storage.updateStoryImage(storyId, imageFullPath);
+        await storage.updateStoryStatus(storyId, 'complete');
+        
+        console.log(`[IMAGE] Successfully generated image for story ${storyId}`);
+        return;
+      } catch (error: any) {
+        lastError = error;
+        console.error(`[IMAGE] Attempt ${attempt + 1}/${maxRetries} failed for story ${storyId}:`, error.message);
+        
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
+        }
+      }
+    }
+    
+    // All retries exhausted
+    console.error(`[IMAGE] All retries exhausted for story ${storyId}`);
+    await storage.updateStoryStatus(storyId, 'failed_image');
+  } catch (error: any) {
+    console.error(`[IMAGE] Fatal error for story ${storyId}:`, error);
+    await storage.updateStoryStatus(storyId, 'failed_image');
   }
 }
 
