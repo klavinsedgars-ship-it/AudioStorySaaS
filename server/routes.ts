@@ -272,6 +272,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Toggle favorite
+  app.post("/api/stories/:storyId/favorite", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { storyId } = req.params;
+      await storage.toggleFavorite(storyId, userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Toggle favorite error:", error);
+      res.status(500).send(error.message || "Failed to toggle favorite");
+    }
+  });
+
   // Create Stripe payment intent
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
 

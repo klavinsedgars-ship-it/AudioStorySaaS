@@ -11,6 +11,7 @@ export interface IStorage {
   createStory(story: InsertStory): Promise<Story>;
   updateStoryAudio(storyId: string, audioUrl: string): Promise<void>;
   getUserStories(userId: string): Promise<Story[]>;
+  toggleFavorite(storyId: string, userId: string): Promise<void>;
   checkPaymentProcessed(paymentId: string): Promise<boolean>;
   recordPayment(paymentId: string, userId: string, creditsAdded: number): Promise<void>;
 }
@@ -60,6 +61,15 @@ export class DbStorage implements IStorage {
 
   async getUserStories(userId: string): Promise<Story[]> {
     return db.select().from(stories).where(eq(stories.userId, userId)).orderBy(desc(stories.createdAt));
+  }
+
+  async toggleFavorite(storyId: string, userId: string): Promise<void> {
+    const [story] = await db.select().from(stories).where(eq(stories.id, storyId));
+    if (!story || story.userId !== userId) {
+      throw new Error("Story not found or unauthorized");
+    }
+    const newFavoriteStatus = story.isFavorite === 'true' ? 'false' : 'true';
+    await db.update(stories).set({ isFavorite: newFavoriteStatus }).where(eq(stories.id, storyId));
   }
 
   async checkPaymentProcessed(paymentId: string): Promise<boolean> {

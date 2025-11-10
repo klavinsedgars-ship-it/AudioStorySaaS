@@ -50,6 +50,7 @@ export const stories = pgTable("stories", {
   storyText: text("story_text").notNull(),
   audioUrl: varchar("audio_url"),
   language: varchar("language", { length: 5 }).notNull().default('en'),
+  isFavorite: varchar("is_favorite", { length: 5 }).notNull().default('false'),
   createdAt: timestamp("created_at").defaultNow(),
   generationAttempt: integer("generation_attempt").notNull().default(1),
 });
