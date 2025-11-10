@@ -39,6 +39,23 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+// Generate random plot element for uniqueness
+function getRandomPlotElement(): string {
+  const elements = [
+    "a mysterious glowing star",
+    "a friendly talking animal",
+    "a magical golden leaf",
+    "a sparkling rainbow bridge",
+    "a cozy hidden treehouse",
+    "a gentle singing brook",
+    "a wise old owl with a secret",
+    "a soft glowing lantern",
+    "a warm cup of magical cocoa",
+    "a peaceful moonlit meadow"
+  ];
+  return elements[Math.floor(Math.random() * elements.length)];
+}
+
 async function generateStoryText(
   heroName: string,
   additionalNames: string[],
@@ -47,28 +64,112 @@ async function generateStoryText(
   customPrompt: string | null
 ): Promise<string> {
   const langName = LANGUAGE_OPTIONS.find((l) => l.code === language)?.name || "English";
+  const randomPlotElement = getRandomPlotElement();
+  
+  // STEP 1: Prepare Master Prompt
+  let masterPrompt = "";
+  let editorPrompt = "";
+  
+  if (language === "lv") {
+    // Latvian Master Prompt
+    masterPrompt = `Tu esi meistarīgs stāstnieks. Tavs mērķis ir radīt maigu, 5-10 minūšu audio stāstu. Tavam tonim jābūt nomierinošam, maģiskam un klusam.
 
-  let systemPrompt = `You are a creative bedtime story writer for children ages 3-8. Create engaging, calming stories in ${langName} that are appropriate for bedtime. Stories should be 200-300 words, use simple language, have a gentle pace, and end peacefully to help children fall asleep.`;
+**NOTEIKUMI:**
+1.  **[LANGUAGE]**: Tev OBLIGĀTI ir jāraksta stāsts ${langName} valodā.
+2.  **Audio Formāts:** Izmanto īsus, skaidrus teikumus. Izmanto biežas rindkopas, jo tās kļūs par dabiskām pauzēm ElevenLabs TTS dzinējam.
+3.  **Mierīgs Tonis:** NEIZMANTO biedējošus vārdus (briesmonis, šausmas, kliedziens). Stāstam jābūt 100% drošam un mierinošam.
+4.  **Unikalitāte:** Tev OBLIGĀTI jāiekļauj šis ${randomPlotElement} sižetā.
+5.  **Struktūra (Obligāti):**
+    * **Žāvas:** Sāc ar miegainu, mierīgu ainu.
+    * **Maigais Piedzīvojums:** Iepazīstini ar sižetu.
+    * **Miegainais Atrisinājums:** Atrisini sižetu laipni un noslēdz stāstu. Stāstam OBLIGĀTI jābeidzas ar to, ka varonis jūtas droši, silti un ļoti miegaini.
 
-  let userPrompt = "";
+---
+**STĀSTA PIEPRASĪJUMS:**
 
-  if (theme) {
-    userPrompt = `Write a bedtime story about ${heroName}`;
-    if (additionalNames.length > 0) {
-      userPrompt += ` and their friends ${additionalNames.join(", ")}`;
-    }
-    userPrompt += ` on a ${theme} adventure. Make it calming and perfect for bedtime.`;
-  } else if (customPrompt) {
-    userPrompt = `Write a bedtime story about ${heroName}`;
-    if (additionalNames.length > 0) {
-      userPrompt += ` and their friends ${additionalNames.join(", ")}`;
-    }
-    userPrompt += `. Story idea: ${customPrompt}. Make it calming and perfect for bedtime.`;
+* **Valoda:** ${langName}
+* **Galvenais Varonis:** ${heroName}
+* **Papildu Varoņi:** ${additionalNames.join(", ") || "Nav"} (Iekļauj šos vārdus stāstā kā draugus vai palīgus.)
+* **Nejaušs Sižeta Elements:** ${randomPlotElement}
+
+---
+**ĢENERĒŠANAS UZDEVUMS:**
+
+${theme ? `**Tēma:** ${theme}
+**Tavs Uzdevums:** Radi pilnu stāstu ${langName} valodā, balstoties uz varoņiem un šo tēmu.` : `**Lietotāja Vēlme:** ${customPrompt}
+**Tavs Uzdevums:** Izmanto šo kā galveno sižetu, bet Tev joprojām jāievēro visi noteikumi (mierīgs tonis, miegaina struktūra, audio formāts un ${langName}).`}`;
+
+    // Latvian Editor Prompt
+    editorPrompt = `Tu esi profesionāls latviešu valodas redaktors un korektors, kurš specializējas bērnu literatūrā.
+
+Es tev iedošu stāstu latviešu valodā, ko ir uzrakstījis AI. Šis stāsts var saturēt gramatikas kļūdas, neveiklu teikumu uzbūvi, nedabiskus izteicienus vai nepareizu vārdu izvēli (piemēram, AI var sajaukt 'ķipari' un 'mazuļi').
+
+Tavs uzdevums ir klusām izlabot VISAS gramatiskās un stila kļūdas. Padari tekstu tā, lai tas izklausītos pēc skaista, dabiska un gramatiski perfekta bērnu stāsta latviešu valodā.
+
+-   Izlabo visas locījumu galotnes.
+-   Pārveido nedabiskus teikumus, lai tie būtu plūstoši.
+-   Nomaini kontekstam neatbilstošus vārdus ar pareizajiem (piemēram, 'pateicos' uz 'paldies', 'ķipari' uz 'mazuļi').
+-   NEMAINI sižetu, galvenā varoņa vārdu vai citus vārdus.
+-   Tavs mērķis ir perfekta gramatika un dabiska valoda.
+
+Atdod atpakaļ TIKAI un VIENĪGI pabeigto, izlaboto latviešu stāstu. Nepievieno nekādus komentārus vai paskaidrojumus.
+
+---
+**STĀSTS, KAS JĀIZLABO:**
+
+[FLAWED_STORY]`;
+  } else {
+    // English Master Prompt
+    masterPrompt = `You are a masterful storyteller. Your goal is to create a gentle, 5-10 minute audio story. Your tone must be soothing, magical, and quiet.
+
+**RULES:**
+1.  **[LANGUAGE]**: You MUST write the story in ${langName}.
+2.  **Audio Format:** Use short, clear sentences. Use frequent paragraphs as they will become natural pauses for the ElevenLabs TTS engine.
+3.  **Calm Tone:** DO NOT use scary words (monster, horror, scream). The story must be 100% safe and soothing.
+4.  **Uniqueness:** You MUST include this ${randomPlotElement} in the plot.
+5.  **Structure (Mandatory):**
+    * **Yawn:** Begin with a sleepy, peaceful scene.
+    * **Gentle Adventure:** Introduce the plot.
+    * **Sleepy Resolution:** Resolve the plot gently and close the story. The story MUST end with the hero feeling safe, warm, and very sleepy.
+
+---
+**STORY REQUEST:**
+
+* **Language:** ${langName}
+* **Main Hero:** ${heroName}
+* **Additional Characters:** ${additionalNames.join(", ") || "None"} (Include these names in the story as friends or helpers.)
+* **Random Plot Element:** ${randomPlotElement}
+
+---
+**GENERATION TASK:**
+
+${theme ? `**Theme:** ${theme}
+**Your Task:** Create a complete story in ${langName} based on the heroes and this theme.` : `**User Request:** ${customPrompt}
+**Your Task:** Use this as the main plot, but you must still follow all rules (calm tone, sleepy structure, audio format, and ${langName}).`}`;
+
+    // English Editor Prompt
+    editorPrompt = `You are a professional editor specializing in children's literature.
+
+I will give you a story in ${langName} written by AI. This story may contain grammar errors, awkward sentence structure, unnatural expressions, or incorrect word choices.
+
+Your task is to silently fix ALL grammatical and stylistic errors. Make the text sound like a beautiful, natural, and grammatically perfect children's story in ${langName}.
+
+-   Fix all grammatical issues.
+-   Rewrite awkward sentences to be flowing and natural.
+-   Replace contextually inappropriate words with correct ones.
+-   DO NOT change the plot, the main hero's name, or other character names.
+-   Your goal is perfect grammar and natural language.
+
+Return ONLY the completed, corrected story in ${langName}. Do not add any comments or explanations.
+
+---
+**STORY TO FIX:**
+
+[FLAWED_STORY]`;
   }
 
-  userPrompt += `\n\nIMPORTANT: Write the entire story in ${langName}. Add variety - make each story unique and different from previous ones about this theme.`;
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  // STEP 2: Call 1 - Generate First Draft
+  const response1 = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -77,21 +178,52 @@ async function generateStoryText(
     body: JSON.stringify({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: "You are a creative children's bedtime story writer. Generate ONLY the story text - no prefaces, no explanations, just the story." },
+        { role: "user", content: masterPrompt },
       ],
       temperature: 0.9,
-      max_tokens: 500,
+      max_tokens: 800,
     }),
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenAI API error: ${error}`);
+  if (!response1.ok) {
+    const error = await response1.text();
+    throw new Error(`OpenAI API error (draft): ${error}`);
   }
 
-  const data = await response.json();
-  return data.choices[0].message.content.trim();
+  const data1 = await response1.json();
+  const flawedStoryText = data1.choices[0].message.content.trim();
+
+  // STEP 3: Call 2 - Edit & Fix
+  const finalEditorPrompt = editorPrompt.replace("[FLAWED_STORY]", flawedStoryText);
+  
+  const response2 = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a professional editor. Return ONLY the corrected story text - no comments, no explanations, no prefaces." },
+        { role: "user", content: finalEditorPrompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 800,
+    }),
+  });
+
+  if (!response2.ok) {
+    const error = await response2.text();
+    throw new Error(`OpenAI API error (editor): ${error}`);
+  }
+
+  const data2 = await response2.json();
+  const correctedStoryText = data2.choices[0].message.content.trim();
+
+  // STEP 4: Return corrected story
+  return correctedStoryText;
 }
 
 async function generateAudioFromText(text: string, language: string): Promise<ArrayBuffer> {

@@ -1,0 +1,134 @@
+Project Brief UPDATE: Fixing Story Quality (Latvian & Other Languages)
+Project Overview: We have a critical quality issue. The base OpenAI-generated stories in non-English languages (like Latvian) are grammatically incorrect and unnatural.
+
+The Solution: We are implementing a new "Generate-then-Edit" process. This will happen entirely in the pages/api/generateStoryText API route.
+
+Call 1: We will use a native-language Master Prompt to generate the first draft.
+
+Call 2: We will immediately feed this first draft into a second AI call, using a new, powerful "Editor Prompt" to fix all grammatical errors, unnatural phrasing, and incorrect vocabulary.
+
+Result: We will send the final, corrected text to the user for approval.
+
+The frontend and all other API routes (generateStoryAudio) remain unchanged.
+
+Phase 1: New Prompts (The "Secret Sauce")
+You must add these new prompt templates to your backend.
+
+1. Latvian Master Prompt (For Call 1)
+This is the Latvian translation of our Master Prompt.
+
+Tu esi meistarīgs stāstnieks. Tavs mērķis ir radīt maigu, 5-10 minūšu audio stāstu. Tavam tonim jābūt nomierinošam, maģiskam un klusam.
+
+**NOTEIKUMI:**
+1.  **[LANGUAGE]**: Tev OBLIGĀTI ir jāraksta stāsts [LANGUAGE] valodā.
+2.  **Audio Formāts:** Izmanto īsus, skaidrus teikumus. Izmanto biežas rindkopas, jo tās kļūs par dabiskām pauzēm ElevenLabs TTS dzinējam.
+3.  **Mierīgs Tonis:** NEIZMANTO biedējošus vārdus (briesmonis, šausmas, kliedziens). Stāstam jābūt 100% drošam un mierinošam.
+4.  **Unikalitāte:** Tev OBLIGĀTI jāiekļauj šis [RANDOM_PLOT_ELEMENT] sižetā.
+5.  **Struktūra (Obligāti):**
+    * **Žāvas:** Sāc ar miegainu, mierīgu ainu.
+    * **Maigais Piedzīvojums:** Iepazīstini ar sižetu.
+    * **Miegainais Atrisinājums:** Atrisini sižetu laipni un noslēdz stāstu. Stāstam OBLIGĀTI jābeidzas ar to, ka varonis jūtas droši, silti un ļoti miegaini.
+
+---
+**STĀSTA PIEPRASĪJUMS:**
+
+* **Valoda:** [LANGUAGE]
+* **Galvenais Varonis:** [HERO_NAME]
+* **Papildu Varoņi:** [ADDITIONAL_NAMES] (Iekļauj šos vārdus stāstā kā draugus vai palīgus.)
+* **Nejaušs Sižeta Elements:** [RANDOM_PLOT_ELEMENT]
+
+---
+**ĢENERĒŠANAS UZDEVUMS:**
+
+[Izmanto TIKAI vienu no šiem blokiem]
+
+**[1. uzdevums: Tēma]**
+* **Tēma:** [THEME]
+* **Tavs Uzdevums:** Radi pilnu stāstu [LANGUAGE] valodā, balstoties uz varoņiem un šo tēmu.
+
+**[2. uzdevums: Pielāgots]**
+* **Lietotāja Vēlme:** [CUSTOM_PROMPT]
+* **Tavs Uzdevums:** Izmanto šo kā galveno sižetu, bet Tev joprojām jāievēro visi noteikumi (mierīgs tonis, miegaina struktūra, audio formāts un [LANGUAGE]).
+2. Latvian "Editor" Prompt (For Call 2)
+This is the new Quality Control prompt.
+
+Tu esi profesionāls latviešu valodas redaktors un korektors, kurš specializējas bērnu literatūrā.
+
+Es tev iedošu stāstu latviešu valodā, ko ir uzrakstījis AI. Šis stāsts var saturēt gramatikas kļūdas, neveiklu teikumu uzbūvi, nedabiskus izteicienus vai nepareizu vārdu izvēli (piemēram, AI var sajaukt 'ķipari' un 'mazuļi').
+
+Tavs uzdevums ir klusām izlabot VISAS gramatiskās un stila kļūdas. Padari tekstu tā, lai tas izklausītos pēc skaista, dabiska un gramatiski perfekta bērnu stāsta latviešu valodā.
+
+-   Izlabo visas locījumu galotnes.
+-   Pārveido nedabiskus teikumus, lai tie būtu plūstoši.
+-   Nomaini kontekstam neatbilstošus vārdus ar pareizajiem (piemēram, 'pateicos' uz 'paldies', 'ķipari' uz 'mazuļi').
+-   NEMAINI sižetu, galvenā varoņa vārdu vai citus vārdus.
+-   Tavs mērķis ir perfekta gramatika un dabiska valoda.
+
+Atdod atpakaļ TIKAI un VIENĪGI pabeigto, izlaboto latviešu stāstu. Nepievieno nekādus komentārus vai paskaidrojumus.
+
+---
+**STĀSTS, KAS JĀIZLABO:**
+
+[Šeit tiks ievietots kļūdainais stāsts]
+(Note: You will also need an English version of this "Editor Prompt" to maintain quality for English stories as well. E.g., "You are a professional editor for children's books. Please fix all grammar and awkward phrasing...").
+
+Phase 2: [UPDATED] API Route: pages/api/generateStoryText
+This is the new, step-by-step logic for this file.
+
+Auth & Inputs:
+
+Get user from Replit Auth.
+
+Get inputs from req.body: heroName, language, generationType, etc.
+
+Credits Check:
+
+Fetch profile_[user.id] from Replit DB.
+
+If profile.credits <= 0, return 402 error.
+
+[NEW] Step 1: Prepare Prompts
+
+Create [RANDOM_PLOT_ELEMENT].
+
+let masterPrompt = ... (English Master Prompt)
+
+let editorPrompt = ... (English Editor Prompt)
+
+If language === 'lv':
+
+masterPrompt = ... (The Latvian Master Prompt from above)
+
+editorPrompt = ... (The Latvian Editor Prompt from above)
+
+Inject all variables ([HERO_NAME], [LANGUAGE], etc.) into the masterPrompt.
+
+[NEW] Step 2: API Call 1 (Generate First Draft)
+
+Call OpenAI with the masterPrompt.
+
+Get the result: const flawedStoryText = response.choices[0].message.content;
+
+[NEW] Step 3: API Call 2 (Edit & Fix)
+
+Build the final editor prompt by injecting flawedStoryText:
+
+JavaScript
+
+const finalEditorPrompt = editorPrompt.replace("[Šeit tiks ievietots kļūdainais stāsts]", flawedStoryText);
+Call OpenAI again with this finalEditorPrompt.
+
+Get the final, corrected result: const correctedStoryText = response.choices[0].message.content;
+
+[NEW] Step 4: Return to User
+
+Send only the correctedStoryText back to the frontend.
+
+res.status(200).json({ storyText: correctedStoryText });
+
+Phase 3: All Other Files
+pages/api/generateStoryAudio: NO CHANGE. It will now receive the high-quality correctedStoryText from the frontend, which it will send to ElevenLabs.
+
+Frontend (index.tsx, etc.): NO CHANGE. The user workflow remains identical. They just get much better text in the "Approval Step."
+
+This is the most robust way to solve your language quality problem.
