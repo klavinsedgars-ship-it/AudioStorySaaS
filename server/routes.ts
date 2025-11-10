@@ -605,6 +605,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get story generation status (for polling)
+  app.get("/api/story/status/:storyId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { storyId } = req.params;
+      
+      const story = await storage.getStory(storyId);
+      
+      if (!story) {
+        return res.status(404).send("Story not found");
+      }
+      
+      if (story.userId !== userId) {
+        return res.status(403).send("Unauthorized access to story");
+      }
+      
+      res.json({
+        id: story.id,
+        status: story.status,
+        audioPath: story.audioPath,
+        imageUrl: story.imageUrl,
+      });
+    } catch (error: any) {
+      console.error("Story status error:", error);
+      res.status(500).send("Failed to get story status");
+    }
+  });
+
   // Get user's stories
   app.get("/api/stories", isAuthenticated, async (req: any, res) => {
     try {
