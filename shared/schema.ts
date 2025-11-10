@@ -63,6 +63,22 @@ export const insertStorySchema = createInsertSchema(stories).omit({
 export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Story = typeof stories.$inferSelect;
 
+// Shared Stories table
+export const sharedStories = pgTable("shared_stories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storyId: varchar("story_id").notNull().references(() => stories.id, { onDelete: 'cascade' }),
+  shareToken: varchar("share_token").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSharedStorySchema = createInsertSchema(sharedStories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSharedStory = z.infer<typeof insertSharedStorySchema>;
+export type SharedStory = typeof sharedStories.$inferSelect;
+
 // Payment tracking for idempotency
 export const payments = pgTable("payments", {
   id: varchar("id").primaryKey(), // payment_intent_id from Stripe

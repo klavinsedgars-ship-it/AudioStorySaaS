@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, BookOpen, Music, Star } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Loader2, BookOpen, Music, Star, Share2, Copy, Check } from "lucide-react";
 import type { Story } from "@shared/schema";
 import { LANGUAGE_OPTIONS } from "@shared/schema";
 import { format } from "date-fns";
@@ -18,6 +19,10 @@ export default function Bookshelf() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [sortBy, setSortBy] = useState<string>("date");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedStoryId, setSelectedStoryId] = useState<string>("");
+  const [shareToken, setShareToken] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
   const { data: stories, isLoading: storiesLoading } = useQuery<Story[]>({
     queryKey: ["/api/stories"],
@@ -40,6 +45,32 @@ export default function Bookshelf() {
       });
     },
   });
+
+  const shareStoryMutation = useMutation({
+    mutationFn: async (storyId: string) => {
+      const response = await apiRequest("POST", `/api/stories/${storyId}/share`, {});
+      return response.shareToken;
+    },
+    onSuccess: (token: string) => {
+      setShareToken(token);
+      setShareDialogOpen(true);
+      setCopied(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create share link",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCopyLink = () => {
+    const shareUrl = `${window.location.origin}/shared/${shareToken}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -170,6 +201,25 @@ export default function Bookshelf() {
                     {story.storyText}
                   </p>
 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedStoryId(story.id);
+                      shareStoryMutation.mutate(story.id);
+                    }}
+                    disabled={shareStoryMutation.isPending && selectedStoryId === story.id}
+                    data-testid={`button-share-${story.id}`}
+                  >
+                    {shareStoryMutation.isPending && selectedStoryId === story.id ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Share2 className="w-4 h-4 mr-2" />
+                    )}
+                    Share Story
+                  </Button>
+
                   {story.audioUrl && (
                     <div className="pt-2 border-t">
                       <div className="flex items-center gap-2 mb-2">
@@ -191,6 +241,45 @@ export default function Bookshelf() {
             ))}
           </div>
         )}
+
+        <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+          <DialogContent data-testid="dialog-share">
+            <DialogHeader>
+              <DialogTitle>Share Your Story</DialogTitle>
+              <DialogDescription>
+                Anyone with this link can view and listen to your story, even without an account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/shared/${shareToken}`}
+                  className="flex-1 px-3 py-2 text-sm bg-muted border rounded-md"
+                  data-testid="input-share-url"
+                />
+                <Button
+                  onClick={handleCopyLink}
+                  variant={copied ? "default" : "outline"}
+                  data-testid="button-copy-link"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -285,6 +285,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Share story
+  app.post("/api/stories/:storyId/share", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { storyId } = req.params;
+      const shareToken = await storage.shareStory(storyId, userId);
+      res.json({ shareToken });
+    } catch (error: any) {
+      console.error("Share story error:", error);
+      res.status(500).send(error.message || "Failed to share story");
+    }
+  });
+
+  // Unshare story
+  app.delete("/api/stories/:storyId/share", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { storyId } = req.params;
+      await storage.unshareStory(storyId, userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Unshare story error:", error);
+      res.status(500).send(error.message || "Failed to unshare story");
+    }
+  });
+
+  // Get shared story (public, no auth required)
+  app.get("/api/shared/:shareToken", async (req, res) => {
+    try {
+      const { shareToken } = req.params;
+      const story = await storage.getSharedStory(shareToken);
+      if (!story) {
+        return res.status(404).send("Story not found");
+      }
+      res.json(story);
+    } catch (error: any) {
+      console.error("Get shared story error:", error);
+      res.status(500).send("Failed to fetch shared story");
+    }
+  });
+
   // Create Stripe payment intent
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
 

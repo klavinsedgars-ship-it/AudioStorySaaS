@@ -1,7 +1,8 @@
 import { db } from "./db";
-import type { UpsertUser, User, InsertStory, Story } from "@shared/schema";
-import { users, stories, payments } from "@shared/schema";
+import type { UpsertUser, User, InsertStory, Story, InsertSharedStory, SharedStory } from "@shared/schema";
+import { users, stories, payments, sharedStories } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
@@ -12,6 +13,9 @@ export interface IStorage {
   updateStoryAudio(storyId: string, audioUrl: string): Promise<void>;
   getUserStories(userId: string): Promise<Story[]>;
   toggleFavorite(storyId: string, userId: string): Promise<void>;
+  shareStory(storyId: string, userId: string): Promise<string>;
+  unshareStory(storyId: string, userId: string): Promise<void>;
+  getSharedStory(shareToken: string): Promise<(Story & { sharedAt: Date }) | null>;
   checkPaymentProcessed(paymentId: string): Promise<boolean>;
   recordPayment(paymentId: string, userId: string, creditsAdded: number): Promise<void>;
 }
@@ -70,6 +74,49 @@ export class DbStorage implements IStorage {
     }
     const newFavoriteStatus = story.isFavorite === 'true' ? 'false' : 'true';
     await db.update(stories).set({ isFavorite: newFavoriteStatus }).where(eq(stories.id, storyId));
+  }
+
+  async shareStory(storyId: string, userId: string): Promise<string> {
+    const [story] = await db.select().from(stories).where(eq(stories.id, storyId));
+    if (!story || story.userId !== userId) {
+      throw new Error("Story not found or unauthorized");
+    }
+    
+    // Check if already shared
+    const [existing] = await db.select().from(sharedStories).where(eq(sharedStories.storyId, storyId));
+    if (existing) {
+      return existing.shareToken;
+    }
+    
+    // Create new share
+    const shareToken = nanoid(12);
+    await db.insert(sharedStories).values({ storyId, shareToken });
+    return shareToken;
+  }
+
+  async unshareStory(storyId: string, userId: string): Promise<void> {
+    const [story] = await db.select().from(stories).where(eq(stories.id, storyId));
+    if (!story || story.userId !== userId) {
+      throw new Error("Story not found or unauthorized");
+    }
+    await db.delete(sharedStories).where(eq(sharedStories.storyId, storyId));
+  }
+
+  async getSharedStory(shareToken: string): Promise<(Story & { sharedAt: Date }) | null> {
+    const [shared] = await db.select().from(sharedStories).where(eq(sharedStories.shareToken, shareToken));
+    if (!shared) {
+      return null;
+    }
+    
+    const [story] = await db.select().from(stories).where(eq(stories.id, shared.storyId));
+    if (!story) {
+      return null;
+    }
+    
+    return {
+      ...story,
+      sharedAt: shared.createdAt!,
+    };
   }
 
   async checkPaymentProcessed(paymentId: string): Promise<boolean> {

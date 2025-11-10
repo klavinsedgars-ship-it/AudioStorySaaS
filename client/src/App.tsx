@@ -10,6 +10,7 @@ import Landing from "@/pages/landing";
 import Creator from "@/pages/creator";
 import Bookshelf from "@/pages/bookshelf";
 import BuyCredits from "@/pages/buy-credits";
+import SharedStory from "@/pages/shared-story";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +29,7 @@ function Router() {
             <Route path="/buy-credits" component={BuyCredits} />
           </>
         )}
+        <Route path="/shared/:token" component={SharedStory} />
         <Route component={NotFound} />
       </Switch>
     </>
