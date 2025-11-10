@@ -13,7 +13,7 @@ type SharedStory = {
   additionalNames: string[];
   theme: string | null;
   storyText: string;
-  audioUrl: string | null;
+  audioPath: string | null;
   language: string;
   createdAt: string;
   sharedAt: Date;
@@ -102,7 +102,7 @@ export default function SharedStory() {
           </CardContent>
         </Card>
 
-        {story.audioUrl && (
+        {story.audioPath && shareToken && (
           <Card className="border-2" data-testid="card-audio">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function SharedStory() {
                 className="w-full"
                 data-testid={`audio-player-${story.id}`}
               >
-                <source src={story.audioUrl} type="audio/mpeg" />
+                <source src={`/api/shared-audio/${shareToken}`} type="audio/mpeg" />
                 Your browser does not support the audio element.
               </audio>
             </CardContent>

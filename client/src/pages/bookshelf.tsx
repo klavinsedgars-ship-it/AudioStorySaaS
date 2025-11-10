@@ -48,8 +48,8 @@ export default function Bookshelf() {
 
   const shareStoryMutation = useMutation({
     mutationFn: async (storyId: string) => {
-      const response = await apiRequest("POST", `/api/stories/${storyId}/share`, {});
-      return response.shareToken;
+      const response = await apiRequest("POST", `/api/stories/${storyId}/share`, {}) as any;
+      return response.shareToken as string;
     },
     onSuccess: (token: string) => {
       setShareToken(token);
@@ -220,7 +220,7 @@ export default function Bookshelf() {
                     Share Story
                   </Button>
 
-                  {story.audioUrl && (
+                  {story.audioPath && (
                     <div className="pt-2 border-t">
                       <div className="flex items-center gap-2 mb-2">
                         <Music className="w-4 h-4 text-primary" />
@@ -231,7 +231,7 @@ export default function Bookshelf() {
                         className="w-full h-10"
                         data-testid={`audio-player-${story.id}`}
                       >
-                        <source src={story.audioUrl} type="audio/mpeg" />
+                        <source src={`/api/audio/${story.id}`} type="audio/mpeg" />
                         Your browser does not support the audio element.
                       </audio>
                     </div>
