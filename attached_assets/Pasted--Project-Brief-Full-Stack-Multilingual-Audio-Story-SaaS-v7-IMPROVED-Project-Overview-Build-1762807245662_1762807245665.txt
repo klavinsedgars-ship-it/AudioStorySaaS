@@ -1,0 +1,1340 @@
+# Project Brief: Full-Stack Multilingual Audio Story SaaS (v7 - IMPROVED)
+
+## Project Overview
+Build a full-stack, monetized, multilingual SaaS application entirely within the Replit ecosystem. The app allows parents to generate personalized audio bedtime stories for their children.
+
+This project uses Replit Auth, Replit Database, and Replit App Storage.
+
+---
+
+## Core Features
+
+- **Replit-Native Stack:** Uses Replit Auth, Replit Database (Key-Value), and Replit App Storage (Object Storage).
+- **Monetization:** A credit-based system with one-time purchase packages.
+- **Cost-Saving Flow:** A "Text-First Approval" step to prevent wasting credits.
+- **Deep Personalization:**
+  - Main hero's name
+  - Multiple additional names (siblings, friends, pets)
+  - Two generation modes: "Choose a Theme" or "Write Your Own Prompt"
+- **Advanced i18n:**
+  - Geo-IP detection to set the site's default language
+  - Full UI translation
+  - Global language dropdown in navbar
+  - Story text and audio generation in selected language
+- **Story Uniqueness:** Backend logic to ensure stories are different each time
+
+---
+
+## Core Tech Stack
+
+- **Framework:** Next.js (with TypeScript)
+- **Authentication:** Replit Auth (using useReplit hook)
+- **Database:** Replit Database (Key-Value, using @replit/database)
+- **File Storage:** Replit App Storage (Object Storage, for MP3s)
+- **Styling:** TailwindCSS
+- **Animations:** Framer Motion
+- **Text Generation:** OpenAI API
+- **Audio Generation:** ElevenLabs API
+- **Payments:** Stripe (Payment Links & Webhooks)
+- **State Management:** React Context (for Language & User)
+
+---
+
+## Phase 1: Auth & Database (The Replit-Native Stack)
+
+### 1. Authentication: Replit Auth
+
+Implement Replit Auth for user sign-up and login using the `useReplit()` hook. The `user.id` is our primary key.
+
+**User Onboarding Flow:**
+
+```javascript
+// On client-side, after login
+const user = ... // from useReplit()
+const profile = await db.get(`profile_${user.id}`);
+
+// IMPROVED: Check for null (not just falsy) to prevent re-crediting
+if (profile === null) {
+  await db.set(`profile_${user.id}`, { 
+    email: user.email, 
+    credits: 3, // The free trial
+    created_at: Date.now(),
+    total_stories: 0
+  });
+}
+```
+
+---
+
+### 2. Database: Replit Database (Key-Value)
+
+**IMPROVED DATABASE SCHEMA:**
+
+#### User Profile
+- **Key:** `profile_[user.id]`
+- **Value:**
+```json
+{
+  "email": "user@example.com",
+  "credits": 10,
+  "created_at": 1699123456000,
+  "total_stories": 5
+}
+```
+
+#### Individual Stories (CHANGED - No More Arrays!)
+- **Key:** `story_[user.id]_[timestamp]_[uuid]`
+- **Value:**
+```json
+{
+  "id": "uuid-string",
+  "user_id": "user123",
+  "hero_name": "Leo",
+  "additional_names": ["Maya", "Fluffy"],
+  "generation_type": "theme",
+  "theme": "Dinosaurs",
+  "custom_prompt_text": null,
+  "story_text": "Once upon a time...",
+  "audio_url": "https://.../story.mp3",
+  "language": "en",
+  "created_at": 1699123456000,
+  "generation_attempt": 1
+}
+```
+
+#### Payment Idempotency (NEW)
+- **Key:** `payment_[payment_intent_id]`
+- **Value:**
+```json
+{
+  "processed": true,
+  "user_id": "user123",
+  "credits_added": 5,
+  "timestamp": 1699123456000
+}
+```
+
+#### Rate Limiting (NEW)
+- **Key:** `ratelimit_[user.id]_[action]`
+- **Value:** `timestamp`
+
+---
+
+### 3. Storage: Replit App Storage
+
+Used to store generated MP3 files. File naming convention:
+
+```javascript
+const filename = `${userId}_${Date.now()}_${heroName.toLowerCase().replace(/\s/g, '_')}.mp3`;
+// Example: "user123_1699123456_leo.mp3"
+```
+
+---
+
+## Phase 2: Geolocation & i18n (Language System)
+
+### 1. i18n Constants (lib/constants.ts)
+
+```typescript
+export const LANGUAGE_OPTIONS = [
+  { 
+    name: "English",
+    code: "en",
+    country: "US",
+    elevenLabsVoiceId: "21m00Tcm4TlvDq8ikWAM" // Rachel
+  },
+  { 
+    name: "Latviešu",
+    code: "lv",
+    country: "LV",
+    elevenLabsVoiceId: "21m00Tcm4TlvDq8ikWAM" // Fallback to Rachel for multilingual
+  },
+  { 
+    name: "Español",
+    code: "es",
+    country: "ES",
+    elevenLabsVoiceId: "EXAVITQu4vr4xnSDxMaL" // Bella (multilingual)
+  },
+  { 
+    name: "Français",
+    code: "fr",
+    country: "FR",
+    elevenLabsVoiceId: "EXAVITQu4vr4xnSDxMaL" // Bella (multilingual)
+  }
+];
+
+// IMPROVED: Fallback helper
+export const getLangConfig = (code: string) => {
+  const lang = LANGUAGE_OPTIONS.find(l => l.code === code);
+  if (!lang || !lang.elevenLabsVoiceId) {
+    console.warn(`No voice config for ${code}, falling back to English`);
+    return LANGUAGE_OPTIONS.find(l => l.code === 'en')!;
+  }
+  return lang;
+};
+```
+
+---
+
+### 2. Next.js Middleware (middleware.ts)
+
+```typescript
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { LANGUAGE_OPTIONS } from './lib/constants';
+
+export function middleware(request: NextRequest) {
+  const existingLang = request.cookies.get('app-lang');
+  
+  if (!existingLang) {
+    const country = request.geo?.country || 'US';
+    const matchedLang = LANGUAGE_OPTIONS.find(l => l.country === country);
+    const langCode = matchedLang?.code || 'en';
+    
+    const response = NextResponse.next();
+    response.cookies.set('app-lang', langCode, {
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+      path: '/'
+    });
+    return response;
+  }
+  
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+};
+```
+
+---
+
+### 3. Global Language Context (context/LanguageContext.tsx)
+
+```typescript
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import Cookies from 'js-cookie';
+
+interface LanguageContextType {
+  currentLang: string;
+  setCurrentLang: (lang: string) => void;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [currentLang, setCurrentLangState] = useState('en');
+
+  useEffect(() => {
+    const cookieLang = Cookies.get('app-lang');
+    if (cookieLang) {
+      setCurrentLangState(cookieLang);
+    }
+  }, []);
+
+  const setCurrentLang = (lang: string) => {
+    setCurrentLangState(lang);
+    Cookies.set('app-lang', lang, { expires: 365 });
+  };
+
+  return (
+    <LanguageContext.Provider value={{ currentLang, setCurrentLang }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within LanguageProvider');
+  }
+  return context;
+}
+```
+
+---
+
+### 4. UI Translation
+
+**locales/** folder structure:
+```
+locales/
+  en.json
+  lv.json
+  es.json
+  fr.json
+```
+
+**hooks/useTranslation.ts:**
+
+```typescript
+import { useLanguage } from '../context/LanguageContext';
+import en from '../locales/en.json';
+import lv from '../locales/lv.json';
+import es from '../locales/es.json';
+import fr from '../locales/fr.json';
+
+const translations: Record<string, any> = { en, lv, es, fr };
+
+export function useTranslation() {
+  const { currentLang } = useLanguage();
+  
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value = translations[currentLang];
+    
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    
+    return value || key;
+  };
+  
+  return { t };
+}
+```
+
+**Example locales/en.json:**
+
+```json
+{
+  "nav": {
+    "create": "Create Story",
+    "bookshelf": "My Stories",
+    "buyCredits": "Buy Credits",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "creator": {
+    "heroName": "Main Character Name",
+    "addName": "Add Another Name",
+    "chooseTheme": "Choose a Theme",
+    "customPrompt": "Write Your Own Story Idea",
+    "generatePreview": "Generate Story Preview",
+    "tryAgain": "Try Again (Free)",
+    "createAudio": "Create Audio & Save (1 Credit)"
+  },
+  "errors": {
+    "no_credits": "You're out of credits! Purchase more to continue.",
+    "audio_failed": "Audio generation failed. Please try again.",
+    "try_again": "Please try again in a moment."
+  }
+}
+```
+
+---
+
+## Phase 3: Frontend (UI/UX)
+
+### 1. Navbar Component
+
+```typescript
+import { useReplit } from '@replit/replit-auth-react';
+import { useLanguage } from '../context/LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
+import { LANGUAGE_OPTIONS } from '../lib/constants';
+
+export default function Navbar() {
+  const { user, login, logout } = useReplit();
+  const { currentLang, setCurrentLang } = useLanguage();
+  const { t } = useTranslation();
+  const [credits, setCredits] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      fetch('/api/getProfile')
+        .then(r => r.json())
+        .then(data => setCredits(data.credits));
+    }
+  }, [user]);
+
+  return (
+    <nav>
+      {user ? (
+        <>
+          <span>{t('nav.credits')}: {credits}</span>
+          <select 
+            value={currentLang} 
+            onChange={(e) => setCurrentLang(e.target.value)}
+          >
+            {LANGUAGE_OPTIONS.map(lang => (
+              <option key={lang.code} value={lang.code}>
+                {lang.name}
+              </option>
+            ))}
+          </select>
+          <a href="/buy-credits">{t('nav.buyCredits')}</a>
+          <button onClick={logout}>{t('nav.logout')}</button>
+        </>
+      ) : (
+        <button onClick={login}>{t('nav.login')}</button>
+      )}
+    </nav>
+  );
+}
+```
+
+---
+
+### 2. Creator Page (pages/index.tsx)
+
+```typescript
+import { useState } from 'react';
+import { useReplit } from '@replit/replit-auth-react';
+import { useLanguage } from '../context/LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
+
+export default function Creator() {
+  const { user } = useReplit();
+  const { currentLang } = useLanguage();
+  const { t } = useTranslation();
+
+  const [heroName, setHeroName] = useState('');
+  const [additionalNames, setAdditionalNames] = useState<string[]>([]);
+  const [generationType, setGenerationType] = useState<'theme' | 'custom'>('theme');
+  const [selectedTheme, setSelectedTheme] = useState('');
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [storyText, setStoryText] = useState<string | null>(null);
+
+  const themes = ['Space Adventure', 'Under the Sea', 'Dinosaurs', 'Magical Forest', 'Farm Friends'];
+
+  const handleGeneratePreview = async () => {
+    setIsLoading(true);
+    const response = await fetch('/api/generateStoryText', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        heroName,
+        additionalNames,
+        language: currentLang,
+        generationType,
+        theme: generationType === 'theme' ? selectedTheme : null,
+        customPrompt: generationType === 'custom' ? customPrompt : null
+      })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      setStoryText(data.storyText);
+    } else {
+      alert(data.message || t('errors.try_again'));
+    }
+    setIsLoading(false);
+  };
+
+  const handleCreateAudio = async () => {
+    setIsLoading(true);
+    const response = await fetch('/api/generateStoryAudio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        storyText,
+        language: currentLang,
+        heroName,
+        additionalNames,
+        theme: generationType === 'theme' ? selectedTheme : 'Custom',
+        customPromptText: generationType === 'custom' ? customPrompt : null
+      })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert('Story created! Check your bookshelf.');
+      window.location.href = '/bookshelf';
+    } else {
+      alert(data.message || t('errors.audio_failed'));
+    }
+    setIsLoading(false);
+  };
+
+  if (!user) return <div>Please login to create stories.</div>;
+
+  return (
+    <div>
+      <h1>{t('creator.title')}</h1>
+      
+      <input 
+        placeholder={t('creator.heroName')}
+        value={heroName}
+        onChange={(e) => setHeroName(e.target.value)}
+      />
+
+      {additionalNames.map((name, i) => (
+        <input 
+          key={i}
+          value={name}
+          onChange={(e) => {
+            const newNames = [...additionalNames];
+            newNames[i] = e.target.value;
+            setAdditionalNames(newNames);
+          }}
+        />
+      ))}
+      <button onClick={() => setAdditionalNames([...additionalNames, ''])}>
+        {t('creator.addName')}
+      </button>
+
+      <div>
+        <button onClick={() => setGenerationType('theme')}>
+          {t('creator.chooseTheme')}
+        </button>
+        <button onClick={() => setGenerationType('custom')}>
+          {t('creator.customPrompt')}
+        </button>
+      </div>
+
+      {generationType === 'theme' && (
+        <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)}>
+          <option value="">Select a theme...</option>
+          {themes.map(theme => (
+            <option key={theme} value={theme}>{theme}</option>
+          ))}
+        </select>
+      )}
+
+      {generationType === 'custom' && (
+        <textarea 
+          placeholder={t('creator.customPrompt')}
+          value={customPrompt}
+          onChange={(e) => setCustomPrompt(e.target.value)}
+        />
+      )}
+
+      {!storyText && (
+        <button onClick={handleGeneratePreview} disabled={isLoading}>
+          {isLoading ? 'Generating...' : t('creator.generatePreview')}
+        </button>
+      )}
+
+      {storyText && (
+        <div>
+          <h2>Preview:</h2>
+          <div style={{ whiteSpace: 'pre-wrap' }}>{storyText}</div>
+          <button onClick={() => setStoryText(null)}>{t('creator.tryAgain')}</button>
+          <button onClick={handleCreateAudio} disabled={isLoading}>
+            {isLoading ? 'Creating...' : t('creator.createAudio')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### 3. Bookshelf Page (pages/bookshelf.tsx)
+
+```typescript
+import { useEffect, useState } from 'react';
+import { useReplit } from '@replit/replit-auth-react';
+
+export default function Bookshelf() {
+  const { user } = useReplit();
+  const [stories, setStories] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      fetch('/api/getStories')
+        .then(r => r.json())
+        .then(data => setStories(data.stories));
+    }
+  }, [user]);
+
+  if (!user) return <div>Please login.</div>;
+
+  return (
+    <div>
+      <h1>My Stories</h1>
+      {stories.map(story => (
+        <div key={story.id}>
+          <h3>{story.hero_name}'s Adventure</h3>
+          <audio controls src={story.audio_url} />
+          <p>{new Date(story.created_at).toLocaleDateString()}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## Phase 4: Backend API Routes (The Engine)
+
+### 1. API: generateStoryText (pages/api/generateStoryText.ts)
+
+```typescript
+import { NextApiRequest, NextApiResponse } from 'next';
+import { getUser } from '@replit/replit-auth-api';
+import { Client } from '@replit/database';
+import OpenAI from 'openai';
+
+const db = new Client();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const user = await getUser(req);
+  if (!user) return res.status(401).json({ error: 'unauthorized' });
+
+  const { heroName, additionalNames, language, generationType, theme, customPrompt } = req.body;
+
+  // Rate limiting
+  const rateLimitKey = `ratelimit_${user.id}_text`;
+  const lastRequest = await db.get(rateLimitKey);
+  if (lastRequest && Date.now() - lastRequest < 5000) {
+    return res.status(429).json({ error: 'too_many_requests', message: 'Please wait 5 seconds between requests.' });
+  }
+  await db.set(rateLimitKey, Date.now());
+
+  // Check credits (soft check - actual deduction happens on audio generation)
+  const profile = await db.get(`profile_${user.id}`);
+  if (!profile || profile.credits <= 0) {
+    return res.status(402).json({ 
+      error: 'insufficient_credits',
+      message: 'You need credits to generate stories. Please purchase more.'
+    });
+  }
+
+  // Generate random plot element for uniqueness
+  const randomElements = [
+    'a friendly talking moon',
+    'a magical sleepy cloud',
+    'a tiny owl with stories to tell',
+    'a gentle rainbow that hums lullabies',
+    'a wise old tree with glowing leaves',
+    'a sleepy dragon who collects dreams',
+    'a starlight fairy with a soothing voice',
+    'a cozy blanket that tells bedtime tales'
+  ];
+
+  const randomLocations = [
+    'a cozy treehouse',
+    'a starlit meadow',
+    'a quiet library in the clouds',
+    'a warm cave with glowing crystals',
+    'a peaceful garden under the moon'
+  ];
+
+  const randomChallenges = [
+    'helps a lost firefly find its way home',
+    'discovers a garden of sleeping flowers',
+    'finds the softest pillow in the world',
+    'helps the stars prepare for bedtime',
+    'learns a magical lullaby from the wind'
+  ];
+
+  const plotElement = randomElements[Math.floor(Math.random() * randomElements.length)];
+  const location = randomLocations[Math.floor(Math.random() * randomLocations.length)];
+  const challenge = randomChallenges[Math.floor(Math.random() * randomChallenges.length)];
+
+  // Build the master prompt
+  const taskBlock = generationType === 'theme' 
+    ? `**Task: Theme-Based Story**
+* **Theme:** ${theme}
+* **Your Job:** Create a full story in ${language} based on the characters and this theme.`
+    : `**Task: Custom Prompt**
+* **User's Request:** ${customPrompt}
+* **Your Job:** Use this custom request as the main plot, but you MUST follow all critical rules (soothing tone, sleepy structure, audio-first, and language: ${language}).`;
+
+  const masterPrompt = `You are a master bedtime storyteller. Your purpose is to create a gentle, 5-10 minute audio-ready story. Your tone is soothing, magical, and calm.
+
+**CRITICAL RULES:**
+1. **[LANGUAGE]**: You MUST write the entire story in ${language}.
+2. **Audio-First:** Use short, clear sentences. Use frequent paragraph breaks for TTS pauses.
+3. **Soothing Tone:** NO scary words (monster, terror, scream). The story must be 100% safe.
+4. **Uniqueness:** You MUST incorporate these random elements into the story:
+   - Plot Element: ${plotElement}
+   - Location: ${location}
+   - Challenge: ${challenge}
+5. **Structure (Required):**
+   * **The Yawn:** Start with a sleepy, calm scene.
+   * **The Gentle Adventure:** Introduce the plot.
+   * **The Sleepy Resolution:** Solve the plot kindly and wind down. The story MUST end with the child feeling safe, warm, and very sleepy.
+
+---
+
+**STORY REQUEST:**
+
+* **Main Hero:** ${heroName}
+* **Additional Characters:** ${additionalNames.join(', ')} (Weave these names in as friends/helpers.)
+* **Language:** ${language}
+
+---
+
+${taskBlock}
+
+---
+
+Write the complete story now. Remember: soothing, audio-ready, in ${language}, and use the random elements for uniqueness.`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: masterPrompt }],
+      temperature: 0.9, // Higher for more creativity/uniqueness
+      max_tokens: 1500
+    });
+
+    const storyText = completion.choices[0].message.content;
+
+    return res.status(200).json({ storyText });
+  } catch (error) {
+    console.error('OpenAI error:', error);
+    return res.status(500).json({ 
+      error: 'generation_failed',
+      message: 'Failed to generate story. Please try again.'
+    });
+  }
+}
+```
+
+---
+
+### 2. API: generateStoryAudio (pages/api/generateStoryAudio.ts)
+
+```typescript
+import { NextApiRequest, NextApiResponse } from 'next';
+import { getUser } from '@replit/replit-auth-api';
+import { Client } from '@replit/database';
+import { getLangConfig } from '../../lib/constants';
+import { v4 as uuidv4 } from 'uuid';
+
+const db = new Client();
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const user = await getUser(req);
+  if (!user) return res.status(401).json({ error: 'unauthorized' });
+
+  const { storyText, language, heroName, additionalNames, theme, customPromptText } = req.body;
+
+  // STEP 1: Check credits FIRST
+  const profile = await db.get(`profile_${user.id}`);
+  if (!profile || profile.credits <= 0) {
+    return res.status(402).json({ 
+      error: 'insufficient_credits',
+      message: 'You need credits to create audio. Please purchase more.'
+    });
+  }
+
+  // STEP 2: Get voice configuration
+  const langConfig = getLangConfig(language);
+  const voiceId = langConfig.elevenLabsVoiceId;
+
+  // STEP 3: Generate audio with ElevenLabs (can fail safely - no credit loss yet)
+  let audioBuffer: Buffer;
+  try {
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': process.env.ELEVENLABS_API_KEY!
+        },
+        body: JSON.stringify({
+          text: storyText,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`ElevenLabs API error: ${response.statusText}`);
+    }
+
+    audioBuffer = Buffer.from(await response.arrayBuffer());
+  } catch (error) {
+    console.error('ElevenLabs error:', error);
+    return res.status(500).json({ 
+      error: 'audio_generation_failed',
+      message: 'Failed to generate audio. Please try again. No credits were deducted.'
+    });
+  }
+
+  // STEP 4: Upload to Replit Storage (can fail safely - no credit loss yet)
+  const storyId = uuidv4();
+  const timestamp = Date.now();
+  const filename = `${user.id}_${timestamp}_${heroName.toLowerCase().replace(/\s/g, '_')}.mp3`;
+  
+  let publicUrl: string;
+  try {
+    // Upload to Replit App Storage
+    const storageResponse = await fetch(`${process.env.REPLIT_STORAGE_URL}/${filename}`, {
+      method: 'PUT',
+      body: audioBuffer,
+      headers: {
+        'Content-Type': 'audio/mpeg'
+      }
+    });
+
+    if (!storageResponse.ok) {
+      throw new Error('Storage upload failed');
+    }
+
+    publicUrl = `${process.env.REPLIT_STORAGE_URL}/${filename}`;
+  } catch (error) {
+    console.error('Storage error:', error);
+    return res.status(500).json({ 
+      error: 'storage_failed',
+      message: 'Failed to save audio file. Please try again. No credits were deducted.'
+    });
+  }
+
+  // STEP 5: ATOMIC COMMIT - Deduct credit + Save story
+  try {
+    // Deduct credit
+    const newCreditCount = profile.credits - 1;
+    await db.set(`profile_${user.id}`, {
+      ...profile,
+      credits: newCreditCount,
+      total_stories: (profile.total_stories || 0) + 1
+    });
+
+    // Save story with individual key (prevents race conditions)
+    const storyKey = `story_${user.id}_${timestamp}_${storyId}`;
+    await db.set(storyKey, {
+      id: storyId,
+      user_id: user.id,
+      hero_name: heroName,
+      additional_names: additionalNames,
+      generation_type: customPromptText ? 'custom' : 'theme',
+      theme: theme,
+      custom_prompt_text: customPromptText,
+      story_text: storyText,
+      audio_url: publicUrl,
+      language: language,
+      created_at: timestamp
+    });
+
+    return res.status(200).json({ 
+      success: true, 
+      newCreditCount,
+      storyId
+    });
+  } catch (error) {
+    console.error('Database commit error:', error);
+    return res.status(500).json({ 
+      error: 'save_failed',
+      message: 'Failed to save story. Contact support if credits were deducted.'
+    });
+  }
+}
+```
+
+---
+
+### 3. API: getStories (pages/api/getStories.ts)
+
+```typescript
+import { NextApiRequest, NextApiResponse } from 'next';
+import { getUser } from '@replit/replit-auth-api';
+import { Client } from '@replit/database';
+
+const db = new Client();
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const user = await getUser(req);
+  if (!user) return res.status(401).json({ error: 'unauthorized' });
+
+  try {
+    // List all story keys for this user
+    const prefix = `story_${user.id}_`;
+    const keys = await db.list(prefix);
+    
+    // Fetch all stories
+    const stories = await Promise.all(
+      keys.map(key => db.get(key))
+    );
+
+    // Sort by created_at descending
+    stories.sort((a, b) => b.created_at - a.created_at);
+
+    return res.status(200).json({ stories });
+  } catch (error) {
+    console.error('Get stories error:', error);
+    return res.status(500).json({ error: 'failed_to_fetch' });
+  }
+}
+```
+
+---
+
+### 4. API: getProfile (pages/api/getProfile.ts)
+
+```typescript
+import { NextApiRequest, NextApiResponse } from 'next';
+import { getUser } from '@replit/replit-auth-api';
+import { Client } from '@replit/database';
+
+const db = new Client();
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const user = await getUser(req);
+  if (!user) return res.status(401).json({ error: 'unauthorized' });
+
+  const profile = await db.get(`profile_${user.id}`);
+  
+  if (!profile) {
+    return res.status(404).json({ error: 'profile_not_found' });
+  }
+
+  return res.status(200).json(profile);
+}
+```
+
+---
+
+## Phase 5: Monetization (Stripe & Credits)
+
+### 1. Stripe Products & Payment Links
+
+In Stripe Dashboard:
+1. Create 3 Products:
+   - "5 Credits" → Price: $4.99 → Create Payment Link → Copy Price ID
+   - "15 Credits" → Price: $12.99 → Create Payment Link → Copy Price ID
+   - "30 Credits" → Price: $24.99 → Create Payment Link → Copy Price ID
+
+2. Save Price IDs in your `.env`:
+```bash
+STRIPE_PRICE_5_CREDITS=price_xxxxx
+STRIPE_PRICE_15_CREDITS=price_xxxxx
+STRIPE_PRICE_30_CREDITS=price_xxxxx
+```
+
+---
+
+### 2. Frontend: Buy Credits Page (pages/buy-credits.tsx)
+
+```typescript
+import { useReplit } from '@replit/replit-auth-react';
+
+export default function BuyCredits() {
+  const { user } = useReplit();
+
+  if (!user) return <div>Please login to purchase credits.</div>;
+
+  const packages = [
+    {
+      credits: 5,
+      price: '$4.99',
+      link: `https://buy.stripe.com/test_xxxxx?client_reference_id=${user.id}`
+    },
+    {
+      credits: 15,
+      price: '$12.99',
+      link: `https://buy.stripe.com/test_xxxxx?client_reference_id=${user.id}`
+    },
+    {
+      credits: 30,
+      price: '$24.99',
+      link: `https://buy.stripe.com/test_xxxxx?client_reference_id=${user.id}`,
+      badge: 'Best Value'
+    }
+  ];
+
+  return (
+    <div>
+      <h1>Buy Credits</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        {packages.map(pkg => (
+          <div key={pkg.credits} style={{ border: '1px solid #ccc', padding: '20px' }}>
+            {pkg.badge && <span style={{ color: 'green' }}>{pkg.badge}</span>}
+            <h2>{pkg.credits} Credits</h2>
+            <p style={{ fontSize: '24px', fontWeight: 'bold' }}>{pkg.price}</p>
+            <a 
+              href={pkg.link}
+              style={{
+                display: 'block',
+                padding: '10px',
+                background: '#5469d4',
+                color: 'white',
+                textAlign: 'center',
+                textDecoration: 'none',
+                borderRadius: '5px'
+              }}
+            >
+              Buy Now
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### 3. Backend: Stripe Webhook (pages/api/stripe-webhook.ts)
+
+```typescript
+import { NextApiRequest, NextApiResponse } from 'next';
+import { Client } from '@replit/database';
+import Stripe from 'stripe';
+import { buffer } from 'micro';
+
+const db = new Client();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16'
+});
+
+// IMPORTANT: Disable body parsing for webhooks
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const buf = await buffer(req);
+  const sig = req.headers['stripe-signature']!;
+
+  let event: Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      buf,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err: any) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the checkout.session.completed event
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    // IMPORTANT: Check for idempotency (Stripe can retry webhooks)
+    const paymentIntentId = session.payment_intent as string;
+    const alreadyProcessed = await db.get(`payment_${paymentIntentId}`);
+    
+    if (alreadyProcessed) {
+      console.log('Payment already processed:', paymentIntentId);
+      return res.status(200).json({ received: true, status: 'already_processed' });
+    }
+
+    // Get user ID from client_reference_id
+    const userId = session.client_reference_id;
+    if (!userId) {
+      console.error('No client_reference_id in session');
+      return res.status(400).json({ error: 'missing_user_id' });
+    }
+
+    // Get the line items to determine which package was purchased
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+      limit: 1
+    });
+
+    const priceId = lineItems.data[0]?.price?.id;
+    if (!priceId) {
+      console.error('No price ID found in line items');
+      return res.status(400).json({ error: 'missing_price_id' });
+    }
+
+    // Map price ID to credits
+    let creditsToAdd = 0;
+    if (priceId === process.env.STRIPE_PRICE_5_CREDITS) {
+      creditsToAdd = 5;
+    } else if (priceId === process.env.STRIPE_PRICE_15_CREDITS) {
+      creditsToAdd = 15;
+    } else if (priceId === process.env.STRIPE_PRICE_30_CREDITS) {
+      creditsToAdd = 30;
+    } else {
+      console.error('Unknown price ID:', priceId);
+      return res.status(400).json({ error: 'unknown_price_id' });
+    }
+
+    try {
+      // Update user credits
+      const profile = await db.get(`profile_${userId}`);
+      if (!profile) {
+        console.error('Profile not found for user:', userId);
+        return res.status(404).json({ error: 'profile_not_found' });
+      }
+
+      const newCreditTotal = (profile.credits || 0) + creditsToAdd;
+      await db.set(`profile_${userId}`, {
+        ...profile,
+        credits: newCreditTotal
+      });
+
+      // Mark payment as processed (for idempotency)
+      await db.set(`payment_${paymentIntentId}`, {
+        processed: true,
+        user_id: userId,
+        credits_added: creditsToAdd,
+        timestamp: Date.now()
+      });
+
+      console.log(`Added ${creditsToAdd} credits to user ${userId}. New total: ${newCreditTotal}`);
+
+      return res.status(200).json({ 
+        received: true, 
+        credits_added: creditsToAdd,
+        new_total: newCreditTotal
+      });
+    } catch (error) {
+      console.error('Database error in webhook:', error);
+      return res.status(500).json({ error: 'database_error' });
+    }
+  }
+
+  // Return 200 for other event types
+  return res.status(200).json({ received: true });
+}
+```
+
+---
+
+## Phase 6: Environment Variables Setup
+
+Create a `.env` file in your Replit project:
+
+```bash
+# OpenAI
+OPENAI_API_KEY=sk-proj-xxxxx
+
+# ElevenLabs
+ELEVENLABS_API_KEY=xxxxx
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_xxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+STRIPE_PRICE_5_CREDITS=price_xxxxx
+STRIPE_PRICE_15_CREDITS=price_xxxxx
+STRIPE_PRICE_30_CREDITS=price_xxxxx
+
+# Replit (auto-provided by Replit)
+REPLIT_DB_URL=xxxxx
+REPLIT_STORAGE_URL=xxxxx
+NEXT_PUBLIC_REPLIT_APP_ID=xxxxx
+```
+
+---
+
+## Phase 7: Testing Checklist
+
+### Before Launch:
+
+- [ ] **Test Stripe Webhook Locally:**
+  ```bash
+  stripe listen --forward-to localhost:3000/api/stripe-webhook
+  stripe trigger checkout.session.completed
+  ```
+
+- [ ] **Test Race Conditions:**
+  - Open 2 browser tabs
+  - Try to generate 2 stories simultaneously
+  - Verify both stories save correctly
+
+- [ ] **Test Credit Deduction:**
+  - Set credits to 1
+  - Generate a story
+  - Verify credits = 0
+  - Try to generate another → should fail with 402
+
+- [ ] **Test All Languages:**
+  - Generate stories in English, Latvian, Spanish, French
+  - Verify ElevenLabs voices work for each
+  - Check for fallback behavior
+
+- [ ] **Test Error Scenarios:**
+  - Kill ElevenLabs API mid-request → verify no credit loss
+  - Kill Storage upload mid-request → verify no credit loss
+  - Try with 0 credits → verify proper error message
+
+- [ ] **Test Payment Flow:**
+  - Use Stripe test cards (4242 4242 4242 4242)
+  - Complete purchase
+  - Verify credits appear in user profile
+  - Try duplicate webhook → verify idempotency works
+
+- [ ] **Test Free Trial:**
+  - Create new account
+  - Verify 3 credits granted
+  - Log out and back in → verify credits persist
+  - Create new account with different email → verify new 3 credits
+
+- [ ] **Test Rate Limiting:**
+  - Click "Generate Preview" rapidly
+  - Verify rate limit kicks in after 5 seconds
+
+- [ ] **Test Language Switching:**
+  - Change language dropdown mid-session
+  - Generate story → verify it's in new language
+  - Check cookie persistence
+
+---
+
+## Phase 8: Deployment to Replit
+
+### 1. Install Dependencies
+
+```bash
+npm install next react react-dom typescript @types/react @types/node
+npm install @replit/replit-auth-react @replit/replit-auth-api @replit/database
+npm install openai stripe uuid
+npm install tailwindcss framer-motion
+npm install js-cookie @types/js-cookie
+npm install micro
+```
+
+### 2. Configure Replit Auth
+
+In Replit:
+1. Go to "Secrets" tab
+2. Add your environment variables
+3. Enable Replit Auth in project settings
+4. Copy your `REPLIT_APP_ID`
+
+### 3. Set Up Stripe Webhook
+
+1. In Stripe Dashboard → Developers → Webhooks
+2. Add endpoint: `https://your-repl-name.your-username.repl.co/api/stripe-webhook`
+3. Select event: `checkout.session.completed`
+4. Copy webhook signing secret to `.env`
+
+### 4. Configure Storage
+
+Replit App Storage is automatically configured. Access it via:
+```typescript
+const storageUrl = process.env.REPLIT_STORAGE_URL;
+```
+
+---
+
+## Phase 9: Optimization Tips
+
+### 1. Caching Strategy
+
+```typescript
+// Cache ElevenLabs voices list
+let voicesCache: any = null;
+let voicesCacheExpiry = 0;
+
+async function getVoices() {
+  if (voicesCache && Date.now() < voicesCacheExpiry) {
+    return voicesCache;
+  }
+  
+  const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+    headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY! }
+  });
+  
+  voicesCache = await response.json();
+  voicesCacheExpiry = Date.now() + 3600000; // 1 hour
+  return voicesCache;
+}
+```
+
+### 2. Parallel Requests
+
+```typescript
+// In bookshelf, fetch stories in parallel
+const storyPromises = keys.map(key => db.get(key));
+const stories = await Promise.all(storyPromises);
+```
+
+### 3. Add Loading Indicators
+
+```typescript
+// Use Framer Motion for smooth transitions
+import { motion, AnimatePresence } from 'framer-motion';
+
+{isLoading && (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+  >
+    Generating your story...
+  </motion.div>
+)}
+```
+
+---
+
+## Phase 10: Future Enhancements (Post-MVP)
+
+### Nice-to-Have Features:
+
+1. **Story Sharing:**
+   - Generate shareable links
+   - Public story gallery (opt-in)
+
+2. **Voice Customization:**
+   - Let users choose from multiple voices per language
+
+3. **Background Music:**
+   - Add ambient sounds (rain, forest, etc.)
+
+4. **Story Templates:**
+   - Pre-built story structures
+
+5. **Analytics Dashboard:**
+   - Show user their most-used themes
+   - Total listening time
+
+6. **Email Delivery:**
+   - Email MP3 files to parents
+
+7. **Subscription Model:**
+   - Monthly unlimited stories option
+
+8. **Mobile App:**
+   - React Native version
+
+---
+
+## Final Architecture Summary
+
+### Database Structure:
+```
+profile_[user.id] → { email, credits, created_at, total_stories }
+story_[user.id]_[timestamp]_[uuid] → { story data }
+payment_[payment_intent_id] → { processed, timestamp }
+ratelimit_[user.id]_[action] → timestamp
+```
+
+### API Routes:
+```
+POST /api/generateStoryText → Returns story text (free)
+POST /api/generateStoryAudio → Returns audio URL (1 credit)
+GET  /api/getStories → Returns user's stories
+GET  /api/getProfile → Returns user profile
+POST /api/stripe-webhook → Handles payments
+```
+
+### Key Improvements from v6:
+1. ✅ Fixed race conditions with individual story keys
+2. ✅ Proper credit deduction timing (after all steps succeed)
+3. ✅ Idempotent webhook handling
+4. ✅ Rate limiting on text generation
+5. ✅ Voice ID fallback system
+6. ✅ Better error messages with translations
+7. ✅ Atomic database commits
+8. ✅ Free trial protection
+
+---
+
+## 🎉 You're Ready to Build!
+
+Start with Phase 1 (Auth + Database), then move sequentially through each phase. Test thoroughly at each step before moving to the next.
+
+Good luck with your SaaS! 🚀
