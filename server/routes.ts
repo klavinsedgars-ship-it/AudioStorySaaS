@@ -182,7 +182,7 @@ Return ONLY the completed, corrected story in ${langName}. Do not add any commen
         { role: "user", content: masterPrompt },
       ],
       temperature: 0.9,
-      max_tokens: 800,
+      max_tokens: 1800,
     }),
   });
 
@@ -210,7 +210,7 @@ Return ONLY the completed, corrected story in ${langName}. Do not add any commen
         { role: "user", content: finalEditorPrompt },
       ],
       temperature: 0.3,
-      max_tokens: 800,
+      max_tokens: 1800,
     }),
   });
 

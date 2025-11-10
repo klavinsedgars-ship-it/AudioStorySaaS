@@ -20,6 +20,8 @@ export default function Bookshelf() {
   const { toast } = useToast();
   const [sortBy, setSortBy] = useState<string>("date");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [readMoreDialogOpen, setReadMoreDialogOpen] = useState(false);
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [selectedStoryId, setSelectedStoryId] = useState<string>("");
   const [shareToken, setShareToken] = useState<string>("");
   const [copied, setCopied] = useState(false);
@@ -202,6 +204,19 @@ export default function Bookshelf() {
                   </p>
 
                   <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-primary hover:text-primary"
+                    onClick={() => {
+                      setSelectedStory(story);
+                      setReadMoreDialogOpen(true);
+                    }}
+                    data-testid={`button-read-more-${story.id}`}
+                  >
+                    Read Full Story
+                  </Button>
+
+                  <Button
                     variant="outline"
                     size="sm"
                     className="w-full"
@@ -241,6 +256,40 @@ export default function Bookshelf() {
             ))}
           </div>
         )}
+
+        <Dialog open={readMoreDialogOpen} onOpenChange={setReadMoreDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh]" data-testid="dialog-read-more">
+            <DialogHeader>
+              <DialogTitle className="font-display text-2xl">
+                {selectedStory && `${selectedStory.heroName}'s ${selectedStory.theme || "Adventure"}`}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedStory && getLangName(selectedStory.language)} • {selectedStory && selectedStory.createdAt && format(new Date(selectedStory.createdAt), 'MMM d, yyyy')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto pr-4 max-h-96">
+              <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-full-story">
+                {selectedStory?.storyText}
+              </p>
+            </div>
+            {selectedStory?.audioPath && (
+              <div className="pt-4 border-t">
+                <div className="flex items-center gap-2 mb-2">
+                  <Music className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Listen to Audio Story</span>
+                </div>
+                <audio
+                  controls
+                  className="w-full h-10"
+                  data-testid="audio-player-dialog"
+                >
+                  <source src={`/api/audio/${selectedStory.id}`} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
           <DialogContent data-testid="dialog-share">

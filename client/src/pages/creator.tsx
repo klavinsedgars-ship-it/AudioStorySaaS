@@ -13,6 +13,7 @@ import { STORY_THEMES } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown, Palmtree, Snowflake, Zap, Flame, Flower, Bot, Gem, Clock, type LucideIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { MagicalLoading } from "@/components/MagicalLoading";
 
 const THEME_ICONS: Record<string, LucideIcon> = {
   "Space Adventure": Rocket,
@@ -289,7 +290,7 @@ export default function Creator() {
                         data-testid={`button-theme-${theme.toLowerCase().replace(/\s+/g, '-')}`}
                       >
                         <Icon className="w-5 h-5" />
-                        {theme}
+                        {t(`themes.${theme}`)}
                       </Button>
                     );
                   })}
@@ -313,34 +314,35 @@ export default function Creator() {
               </div>
             )}
 
-            <Button
-              onClick={handleGeneratePreview}
-              disabled={isGenerating}
-              className="w-full h-12 gap-2 text-base"
-              data-testid="button-generate-preview"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {t('creator.generating')}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  {t('creator.generatePreview')}
-                </>
-              )}
-            </Button>
+            {!isGenerating && (
+              <Button
+                onClick={handleGeneratePreview}
+                disabled={isGenerating}
+                className="w-full h-12 gap-2 text-base"
+                data-testid="button-generate-preview"
+              >
+                <Sparkles className="w-4 h-4" />
+                {t('creator.generatePreview')}
+              </Button>
+            )}
 
-            {storyText && (
+            {isGenerating && (
+              <div className="my-8">
+                <MagicalLoading message={t('creator.generating')} />
+              </div>
+            )}
+
+            {storyText && !isCreatingAudio && (
               <Card className="border-2 bg-card/50" data-testid="card-story-preview">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">{t('creator.preview')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-lg leading-loose whitespace-pre-wrap" data-testid="text-story-preview">
-                    {storyText}
-                  </p>
+                  <div className="max-h-96 overflow-y-auto pr-2">
+                    <p className="text-lg leading-loose whitespace-pre-wrap" data-testid="text-story-preview">
+                      {storyText}
+                    </p>
+                  </div>
                   <div className="flex gap-3 flex-wrap">
                     <Button
                       variant="outline"
@@ -358,21 +360,18 @@ export default function Creator() {
                       className="flex-1 gap-2"
                       data-testid="button-create-audio"
                     >
-                      {isCreatingAudio ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          {t('creator.creatingAudio')}
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4" />
-                          {t('creator.createAudio')}
-                        </>
-                      )}
+                      <Sparkles className="w-4 h-4" />
+                      {t('creator.createAudio')}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {isCreatingAudio && (
+              <div className="my-8">
+                <MagicalLoading message={t('creator.creatingAudio')} />
+              </div>
             )}
           </CardContent>
         </Card>

@@ -21,6 +21,23 @@ const translations: Record<string, Record<string, any>> = {
       feature3: "AI-Powered Magic",
       feature3Desc: "Unique stories every time, tailored to your choices"
     },
+    themes: {
+      "Space Adventure": "Space Adventure",
+      "Under the Sea": "Under the Sea",
+      "Dinosaurs": "Dinosaurs",
+      "Magical Forest": "Magical Forest",
+      "Farm Friends": "Farm Friends",
+      "Pirate Treasure Hunt": "Pirate Treasure Hunt",
+      "Princess Castle": "Princess Castle",
+      "Jungle Safari": "Jungle Safari",
+      "Arctic Animals": "Arctic Animals",
+      "Superhero Mission": "Superhero Mission",
+      "Dragon Quest": "Dragon Quest",
+      "Fairy Garden": "Fairy Garden",
+      "Robot Workshop": "Robot Workshop",
+      "Ocean Treasure": "Ocean Treasure",
+      "Time Travel Adventure": "Time Travel Adventure"
+    },
     creator: {
       title: "Create Your Story",
       heroName: "Main Character Name",
@@ -79,6 +96,23 @@ const translations: Record<string, Record<string, any>> = {
       feature2Desc: "Stāsti angļu, spāņu, franču un latviešu valodā",
       feature3: "AI Maģija",
       feature3Desc: "Unikāli stāsti katru reizi"
+    },
+    themes: {
+      "Space Adventure": "Kosmosa Piedzīvojums",
+      "Under the Sea": "Zem Jūras",
+      "Dinosaurs": "Dinozauri",
+      "Magical Forest": "Maģiskais Mežs",
+      "Farm Friends": "Fermas Draugi",
+      "Pirate Treasure Hunt": "Pirātu Dārgumu Medības",
+      "Princess Castle": "Princesu Pils",
+      "Jungle Safari": "Džungļu Safarī",
+      "Arctic Animals": "Arktikas Dzīvnieki",
+      "Superhero Mission": "Varoņa Misija",
+      "Dragon Quest": "Pūķa Misija",
+      "Fairy Garden": "Fēju Dārzs",
+      "Robot Workshop": "Robotu Darbnīca",
+      "Ocean Treasure": "Okeāna Dārgumi",
+      "Time Travel Adventure": "Ceļojums Laikā"
     },
     creator: {
       title: "Izveidot Stāstu",
@@ -139,6 +173,23 @@ const translations: Record<string, Record<string, any>> = {
       feature3: "Magia con IA",
       feature3Desc: "Historias únicas cada vez"
     },
+    themes: {
+      "Space Adventure": "Aventura Espacial",
+      "Under the Sea": "Bajo el Mar",
+      "Dinosaurs": "Dinosaurios",
+      "Magical Forest": "Bosque Mágico",
+      "Farm Friends": "Amigos de la Granja",
+      "Pirate Treasure Hunt": "Búsqueda del Tesoro Pirata",
+      "Princess Castle": "Castillo de Princesas",
+      "Jungle Safari": "Safari en la Selva",
+      "Arctic Animals": "Animales Árticos",
+      "Superhero Mission": "Misión de Superhéroe",
+      "Dragon Quest": "Búsqueda del Dragón",
+      "Fairy Garden": "Jardín de Hadas",
+      "Robot Workshop": "Taller de Robots",
+      "Ocean Treasure": "Tesoro del Océano",
+      "Time Travel Adventure": "Aventura en el Tiempo"
+    },
     creator: {
       title: "Crear Tu Historia",
       heroName: "Nombre del Personaje Principal",
@@ -197,6 +248,23 @@ const translations: Record<string, Record<string, any>> = {
       feature2Desc: "Histoires en anglais, espagnol, français et letton",
       feature3: "Magie de l'IA",
       feature3Desc: "Des histoires uniques à chaque fois"
+    },
+    themes: {
+      "Space Adventure": "Aventure Spatiale",
+      "Under the Sea": "Sous la Mer",
+      "Dinosaurs": "Dinosaures",
+      "Magical Forest": "Forêt Magique",
+      "Farm Friends": "Amis de la Ferme",
+      "Pirate Treasure Hunt": "Chasse au Trésor des Pirates",
+      "Princess Castle": "Château de Princesse",
+      "Jungle Safari": "Safari dans la Jungle",
+      "Arctic Animals": "Animaux de l'Arctique",
+      "Superhero Mission": "Mission de Super-Héros",
+      "Dragon Quest": "Quête du Dragon",
+      "Fairy Garden": "Jardin des Fées",
+      "Robot Workshop": "Atelier de Robots",
+      "Ocean Treasure": "Trésor de l'Océan",
+      "Time Travel Adventure": "Aventure dans le Temps"
     },
     creator: {
       title: "Créer Votre Histoire",
