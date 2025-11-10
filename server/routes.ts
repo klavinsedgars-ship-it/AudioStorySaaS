@@ -326,6 +326,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user payment history
+  app.get("/api/payment-history", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const history = await storage.getUserPaymentHistory(userId);
+      res.json(history);
+    } catch (error: any) {
+      console.error("Get payment history error:", error);
+      res.status(500).send("Failed to fetch payment history");
+    }
+  });
+
   // Create Stripe payment intent
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
 

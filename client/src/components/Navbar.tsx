@@ -54,6 +54,16 @@ export default function Navbar() {
                 {t('nav.bookshelf')}
               </Button>
             </Link>
+            <Link href="/dashboard">
+              <Button 
+                variant={location === "/dashboard" ? "secondary" : "ghost"}
+                className="gap-2"
+                data-testid="link-dashboard"
+              >
+                <Coins className="w-4 h-4" />
+                Dashboard
+              </Button>
+            </Link>
             <Link href="/buy-credits">
               <Button 
                 variant={location === "/buy-credits" ? "secondary" : "ghost"}

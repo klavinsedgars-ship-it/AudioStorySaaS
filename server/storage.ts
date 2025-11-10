@@ -16,6 +16,7 @@ export interface IStorage {
   shareStory(storyId: string, userId: string): Promise<string>;
   unshareStory(storyId: string, userId: string): Promise<void>;
   getSharedStory(shareToken: string): Promise<(Story & { sharedAt: Date }) | null>;
+  getUserPaymentHistory(userId: string): Promise<any[]>;
   checkPaymentProcessed(paymentId: string): Promise<boolean>;
   recordPayment(paymentId: string, userId: string, creditsAdded: number): Promise<void>;
 }
@@ -117,6 +118,10 @@ export class DbStorage implements IStorage {
       ...story,
       sharedAt: shared.createdAt!,
     };
+  }
+
+  async getUserPaymentHistory(userId: string): Promise<any[]> {
+    return db.select().from(payments).where(eq(payments.userId, userId)).orderBy(desc(payments.createdAt));
   }
 
   async checkPaymentProcessed(paymentId: string): Promise<boolean> {
