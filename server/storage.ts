@@ -11,6 +11,8 @@ export interface IStorage {
   updateUserCredits(userId: string, newCredits: number): Promise<void>;
   createStory(story: InsertStory): Promise<Story>;
   updateStoryAudio(storyId: string, audioPath: string): Promise<void>;
+  updateStoryImage(storyId: string, imageUrl: string): Promise<void>;
+  updateStoryStatus(storyId: string, status: string): Promise<void>;
   getStory(storyId: string): Promise<Story | undefined>;
   getUserStories(userId: string): Promise<Story[]>;
   toggleFavorite(storyId: string, userId: string): Promise<void>;
@@ -65,6 +67,14 @@ export class DbStorage implements IStorage {
 
   async updateStoryAudio(storyId: string, audioPath: string): Promise<void> {
     await db.update(stories).set({ audioPath }).where(eq(stories.id, storyId));
+  }
+
+  async updateStoryImage(storyId: string, imageUrl: string): Promise<void> {
+    await db.update(stories).set({ imageUrl }).where(eq(stories.id, storyId));
+  }
+
+  async updateStoryStatus(storyId: string, status: string): Promise<void> {
+    await db.update(stories).set({ status }).where(eq(stories.id, storyId));
   }
 
   async getStory(storyId: string): Promise<Story | undefined> {
