@@ -3,26 +3,46 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
+import Navbar from "@/components/Navbar";
+import Landing from "@/pages/landing";
+import Creator from "@/pages/creator";
+import Bookshelf from "@/pages/bookshelf";
+import BuyCredits from "@/pages/buy-credits";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
-    <Switch>
-      {/* Add pages below */}
-      {/* <Route path="/" component={Home}/> */}
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <Navbar />
+      <Switch>
+        {isLoading || !isAuthenticated ? (
+          <Route path="/" component={Landing} />
+        ) : (
+          <>
+            <Route path="/" component={Creator} />
+            <Route path="/bookshelf" component={Bookshelf} />
+            <Route path="/buy-credits" component={BuyCredits} />
+          </>
+        )}
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
