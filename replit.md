@@ -29,7 +29,11 @@ Preferred communication style: Simple, everyday language.
 
 **Key Pages**:
 - Landing: Unauthenticated marketing page
-- Creator: Story generation workflow with theme selection or custom prompts
+- Creator: Story generation workflow with two-column desktop layout
+  - Left Column: Form controls (hero name, additional names, theme/custom mode toggles, theme grid, generate button)
+  - Right Column: StorybookPreview component (sticky) showing empty/loading/success states
+  - Mobile: Single-column responsive layout that stacks vertically
+  - StorybookPreview Component: Book-styled preview with parchment background, serif font for story text, Quicksand font for titles, subtle spine effect
 - Bookshelf: User's story library with favorite/share functionality
 - Dashboard: User statistics and payment history
 - Admin: User and payment management (admin-only)
@@ -87,13 +91,15 @@ Preferred communication style: Simple, everyday language.
   - English Master Prompt: Equivalent prompt for English and other languages
   - Random plot element injection for story uniqueness
   - System role enforces clean story output without prefaces
-- **Step 2 - Edit & Fix**: Second OpenAI API call (temp 0.3) corrects grammar and naturalness
+- **Step 2 - Edit & Fix**: OpenAI API (gpt-4o, temp 0.3) corrects grammar and naturalness with superior quality
+  - Uses powerful gpt-4o model for professional-grade editing (upgraded from gpt-4o-mini for better grammatical quality)
   - Latvian Editor Prompt: Professional Latvian language editor that fixes grammar errors, awkward phrasing, incorrect word choices
   - English Editor Prompt: Equivalent editor for English and other languages
   - System role ensures only corrected story text is returned
 - Final corrected text sent to user for approval before audio generation
 - Supports theme-based or custom prompt modes
 - Language-aware story generation with native-quality grammar
+- Model strategy: Fast gpt-4o-mini for creative drafting, powerful gpt-4o for final polish
 
 **Audio Generation**:
 - ElevenLabs API for text-to-speech conversion

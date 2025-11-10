@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown, Palmtree, Snowflake, Zap, Flame, Flower, Bot, Gem, Clock, type LucideIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { MagicalLoading } from "@/components/MagicalLoading";
+import { StorybookPreview } from "@/components/StorybookPreview";
 
 const THEME_ICONS: Record<string, LucideIcon> = {
   "Space Adventure": Rocket,
@@ -190,8 +191,13 @@ export default function Creator() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-background to-background dark:from-purple-950/20 dark:via-background dark:to-background pt-24 pb-16">
-      <div className="max-w-2xl mx-auto px-4 sm:px-8">
-        <Card className="border-2 shadow-xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8">
+        {/* Two-column grid for desktop, single column for mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          
+          {/* LEFT COLUMN: The Form */}
+          <div className="lg:order-1">
+            <Card className="border-2 shadow-xl">
           <CardHeader className="pb-4">
             <CardTitle className="font-display text-3xl text-center bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid="text-creator-title">
               {t('creator.title')}
@@ -341,68 +347,74 @@ export default function Creator() {
                 />
               </div>
             )}
-
-            {!isGenerating && (
-              <Button
-                onClick={handleGeneratePreview}
-                disabled={isGenerating}
-                className="w-full h-12 gap-2 text-base"
-                data-testid="button-generate-preview"
-              >
-                <Sparkles className="w-4 h-4" />
-                {t('creator.generatePreview')}
-              </Button>
-            )}
-
-            {isGenerating && (
-              <div className="my-8">
-                <MagicalLoading message={t('creator.generating')} />
-              </div>
-            )}
-
-            {storyText && !isCreatingAudio && (
-              <Card className="border-2 bg-card/50" data-testid="card-story-preview">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{t('creator.preview')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="max-h-96 overflow-y-auto pr-2">
-                    <p className="text-lg leading-loose whitespace-pre-wrap" data-testid="text-story-preview">
-                      {storyText}
-                    </p>
-                  </div>
-                  <div className="flex gap-3 flex-wrap">
-                    <Button
-                      variant="outline"
-                      onClick={handleGeneratePreview}
-                      disabled={isGenerating}
-                      className="flex-1 gap-2"
-                      data-testid="button-try-again"
-                    >
-                      <Wand2 className="w-4 h-4" />
-                      {t('creator.tryAgain')}
-                    </Button>
-                    <Button
-                      onClick={handleCreateAudio}
-                      disabled={isCreatingAudio}
-                      className="flex-1 gap-2"
-                      data-testid="button-create-audio"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      {t('creator.createAudio')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {isCreatingAudio && (
-              <div className="my-8">
-                <MagicalLoading message={t('creator.creatingAudio')} />
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* Generate Button - Always visible in left column */}
+        <Button
+          onClick={handleGeneratePreview}
+          disabled={isGenerating}
+          className="w-full h-12 gap-2 text-base mt-6"
+          data-testid="button-generate-preview"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {t('creator.generating')}
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              {t('creator.generatePreview')}
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* RIGHT COLUMN: The Storybook */}
+      <div className="lg:order-2 lg:sticky lg:top-24 lg:h-fit">
+        <StorybookPreview 
+          storyText={storyText}
+          isLoading={isGenerating}
+          heroName={heroName}
+        />
+
+        {/* Approval Buttons - Show when story is ready */}
+        {storyText && !isGenerating && (
+          <div className="flex gap-3 flex-wrap mt-6">
+            <Button
+              variant="outline"
+              onClick={handleGeneratePreview}
+              disabled={isGenerating}
+              className="flex-1 gap-2"
+              data-testid="button-try-again"
+            >
+              <Wand2 className="w-4 h-4" />
+              {t('creator.tryAgain')}
+            </Button>
+            <Button
+              onClick={handleCreateAudio}
+              disabled={isCreatingAudio}
+              className="flex-1 gap-2"
+              data-testid="button-create-audio"
+            >
+              {isCreatingAudio ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t('creator.creatingAudio')}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  {t('creator.createAudio')}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+
+        </div>
       </div>
     </div>
   );

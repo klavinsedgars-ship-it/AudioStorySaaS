@@ -1,0 +1,171 @@
+This is an excellent idea. The solution is to move from a single-column layout to a two-column "Creator & Storybook" layout on desktop, while remaining a single column on mobile.
+
+Here is my recommendation and a detailed prompt for your Replit developer.
+
+🎨 Key Redesign Recommendations
+Two-Column Desktop Layout:
+
+The creator.tsx page should be split into two vertical columns on desktop (e.g., lg:grid-cols-2).
+
+Left Column (The "Controls"): This column will hold the entire creator form you have now (the Card with Hero Name, Add Name, Theme/Custom toggles, and Theme grid).
+
+Right Column (The "Creation"): This column will be dedicated exclusively to showing the story preview. It will be "sticky" (stay in view as the user scrolls the left column) to provide immediate feedback.
+
+The "Magical Storybook" Component:
+
+To fulfill your "book feeling" request, we will not just show the text in a plain Card. We will create a new, highly-styled component that looks like an open book.
+
+Visuals: This component will have a "parchment" or cream-colored background, a subtle shadow in the "spine" (middle) to look like two pages, and will use your "Quicksand" display font for the title and a classic font-serif for the body text.
+
+Dynamic Content (The "Catch"):
+
+The "Storybook" component in the right column won't be empty. It will react to the user's state:
+
+Default State: When storyText is null, it will show a "magical empty state" (e.g., a whimsical illustration of an open, empty book with the text, "Your story is waiting to be written...").
+
+Loading State: When isGenerating is true, it will show your "magical loading" messages ("Asking the moon for a story...").
+
+Success State: When storyText is generated, it will fade in and populate the book's pages. The "Try Again" and "Create Audio" buttons will appear underneath this book.
+
+Responsive Fallback:
+
+This two-column layout will only apply to larger screens.
+
+On mobile (md: and below), the layout will automatically stack back to a single column, with the "Storybook" component appearing below the creator form, just as it does now. This ensures the app remains perfectly usable on all devices.
+
+🚀 Full Redesign Prompt for Replit (Creator Page v8)
+Here is a detailed prompt for your Replit developer to implement this new layout.
+
+Project Brief: "Creator & Storybook" Two-Column Redesign
+
+Project Overview: This is a high-priority UX/UI redesign of the creator.tsx page. We are moving from a single-column layout to a two-column desktop layout to provide a more magical and interactive "book" feeling.
+
+Core Goal: On desktop, the user will see the creation form on the left and a "Storybook Preview" on the right. On mobile, it will stack vertically.
+
+1. New Component: components/StorybookPreview.tsx
+First, create a new reusable component for the story preview.
+
+File: client/src/components/StorybookPreview.tsx
+
+Props:
+
+storyText: string | null
+
+isLoading: boolean
+
+heroName: string
+
+Logic:
+
+This component will be a Card styled to look like an open book.
+
+Give it a warm, "parchment" background (e.g., bg-cream-100 - add this to tailwind.config.ts).
+
+Add a subtle "spine" effect (e.g., a box-shadow or a border-l and border-r on two inner divs) to simulate two pages.
+
+Handle 3 States:
+
+Default State (!storyText && !isLoading): Show a "magical empty state."
+
+Include a friendly illustration (like an open, empty book).
+
+Show text like "Your story will appear here..." using the font-display (Quicksand).
+
+Loading State (isLoading):
+
+Show the "magical loading" messages (e.g., "Asking the moon for a story...").
+
+Success State (storyText):
+
+Show a title: h2 with font-display (e.g., {heroName}'s Adventure).
+
+Show the storyText formatted in a div with whitespace-pre-wrap.
+
+Crucially, apply font-serif to the story text div to give it a classic "book" feel.
+
+2. [REFACTOR] Page: client/src/pages/creator.tsx
+This is where we implement the new two-column layout.
+
+Change Page Structure:
+
+Remove the max-w-2xl from the main container. Change the container to max-w-7xl.
+
+Create a two-column grid:
+
+TypeScript
+
+<div className="min-h-screen ... pt-24 pb-16">
+  <div className="max-w-7xl mx-auto px-4 sm:px-8">
+    {/* NEW: Two-column grid for desktop */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+
+      {/* === LEFT COLUMN: THE FORM === */}
+      <div className="lg:order-1">
+        <Card className="border-2 shadow-xl">
+          <CardHeader>...</CardHeader>
+          <CardContent className="space-y-6">
+            {/* All form elements go here: */}
+            {/* Hero Name Input */}
+            {/* Additional Names Section */}
+            {/* Generation Type Toggle (Theme/Custom) */}
+            {/* Theme Grid or Custom Prompt Textarea */}
+          </CardContent>
+        </Card>
+
+        {/* --- THIS SECTION MOVES --- */}
+        {/* The "Generate Story Preview" button NOW lives in the LEFT column */}
+        <Button
+          onClick={handleGeneratePreview}
+          disabled={isGenerating}
+          className="w-full h-12 gap-2 text-base mt-6" 
+          data-testid="button-generate-preview"
+        >
+          {/* ... loading/default state ... */}
+        </Button>
+      </div>
+
+      {/* === RIGHT COLUMN: THE STORYBOOK === */}
+      <div className="lg:order-2 lg:sticky lg:top-24 h-full"> 
+        {/* Use the new Storybook component */}
+        <StorybookPreview 
+          storyText={storyText}
+          isLoading={isGenerating}
+          heroName={heroName}
+        />
+
+        {/* The "Approval Buttons" now live in the RIGHT column */}
+        {/* Use framer-motion to fade them in with the story */}
+        {storyText && !isGenerating && (
+          <div className="flex gap-3 flex-wrap mt-6">
+            <Button
+              variant="outline"
+              onClick={handleGeneratePreview} // "Try Again"
+              disabled={isGenerating}
+              className="flex-1 gap-2"
+              data-testid="button-try-again"
+            >
+              <Wand2 className="w-4 h-4" />
+              {t('creator.tryAgain')}
+            </Button>
+            <Button
+              onClick={handleCreateAudio}
+              disabled={isCreatingAudio}
+              className="flex-1 gap-2"
+              data-testid="button-create-audio"
+            >
+              {/* ... loading/default state ... */}
+            </Button>
+          </div>
+        )}
+      </div>
+
+    </div>
+  </div>
+</div>
+Remove Old Logic:
+
+Delete the entire storyText && (...) block from the bottom of the page. We have replaced it with the new StorybookPreview component in the right-hand column.
+
+The "Generate Story Preview" button should be moved out of that conditional block and placed permanently in the left column.
+
+The "Try Again" and "Create Audio" buttons should be moved to the right column, under the new StorybookPreview component, and only appear when storyText is available.
