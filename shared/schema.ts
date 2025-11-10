@@ -85,7 +85,7 @@ export const payments = pgTable("payments", {
   id: varchar("id").primaryKey(), // payment_intent_id from Stripe
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   creditsAdded: integer("credits_added").notNull(),
-  processed: timestamp("processed").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export type Payment = typeof payments.$inferSelect;
@@ -130,7 +130,17 @@ export const STORY_THEMES = [
   "Under the Sea",
   "Dinosaurs",
   "Magical Forest",
-  "Farm Friends"
+  "Farm Friends",
+  "Pirate Treasure Hunt",
+  "Princess Castle",
+  "Jungle Safari",
+  "Arctic Animals",
+  "Superhero Mission",
+  "Dragon Quest",
+  "Fairy Garden",
+  "Robot Workshop",
+  "Ocean Treasure",
+  "Time Travel Adventure"
 ];
 
 export const CREDIT_PACKAGES = [

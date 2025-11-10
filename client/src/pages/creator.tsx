@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { STORY_THEMES } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, type LucideIcon } from "lucide-react";
+import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown, Palmtree, Snowflake, Zap, Flame, Flower, Bot, Gem, Clock, type LucideIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 const THEME_ICONS: Record<string, LucideIcon> = {
@@ -20,6 +20,16 @@ const THEME_ICONS: Record<string, LucideIcon> = {
   "Dinosaurs": Sparkles,
   "Magical Forest": TreePine,
   "Farm Friends": Tractor,
+  "Pirate Treasure Hunt": Ship,
+  "Princess Castle": Crown,
+  "Jungle Safari": Palmtree,
+  "Arctic Animals": Snowflake,
+  "Superhero Mission": Zap,
+  "Dragon Quest": Flame,
+  "Fairy Garden": Flower,
+  "Robot Workshop": Bot,
+  "Ocean Treasure": Gem,
+  "Time Travel Adventure": Clock,
 };
 
 export default function Creator() {
