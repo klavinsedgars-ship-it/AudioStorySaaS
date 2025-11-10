@@ -545,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate audio and save story (costs 1 credit)
+  // Generate audio and save story (costs 1 credit) - ASYNC VERSION
   app.post("/api/generate-story-audio", isAuthenticated, async (req: any, res) => {
 
     const schema = z.object({
@@ -570,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("Insufficient credits");
       }
 
-      // Create story in database first (without audio)
+      // Create story in database with status='pending'
       const story = await storage.createStory({
         userId: user.id,
         heroName: validated.heroName,
@@ -581,29 +581,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storyText: validated.storyText,
         language: validated.language,
         audioPath: null,
+        imageUrl: null,
+        status: 'pending',
         generationAttempt: 1,
       });
 
-      // Generate audio
-      const audioBuffer = await generateAudioFromText(validated.storyText, validated.language);
-
-      // Upload to object storage
-      const filename = `story-${story.id}-${Date.now()}.mp3`;
-      const audioPath = await uploadAudioToStorage(audioBuffer, filename);
-
-      // Update story with audio path
-      await storage.updateStoryAudio(story.id, audioPath);
-
-      // Deduct credit
+      // Deduct credit immediately
       await storage.updateUserCredits(user.id, user.credits - 1);
 
+      // Return success immediately
       res.json({ success: true, storyId: story.id });
+
+      // Kick off background jobs (fire-and-forget)
+      void generateAndSaveAudio(story.id, validated.storyText, validated.language);
+      void generateAndSaveIllustration(story.id, validated.storyText, validated.heroName);
+
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).send(fromError(error).toString());
       }
       console.error("Audio generation error:", error);
-      res.status(500).send(error.message || "Failed to generate audio");
+      res.status(500).send(error.message || "Failed to create story");
     }
   });
 
