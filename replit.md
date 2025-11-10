@@ -58,7 +58,8 @@ Preferred communication style: Simple, everyday language.
 
 **Storage Strategy**:
 - Database: User profiles, story metadata, payment records
-- File storage: Audio files (MP3s) stored using Replit App Storage (object storage abstraction)
+- Object Storage: Audio files (MP3s) stored in Replit Object Storage with API-served endpoints
+- Audio serving: `/api/audio/:storyId` (authenticated), `/api/shared-audio/:token` (public)
 
 **API Design**:
 - RESTful endpoints under `/api/*`
@@ -80,16 +81,29 @@ Preferred communication style: Simple, everyday language.
 
 ### AI Integration Strategy
 
-**Text Generation**: 
-- OpenAI API for story text generation
-- System prompts tailored for bedtime stories (ages 3-8)
+**Text Generation (Two-Step Generate-then-Edit Process)**: 
+- **Step 1 - Generate Draft**: OpenAI API (gpt-4o-mini, temp 0.9) creates initial story using language-specific Master Prompts
+  - Latvian Master Prompt: Comprehensive prompt in Latvian with specific grammar rules and structure
+  - English Master Prompt: Equivalent prompt for English and other languages
+  - Random plot element injection for story uniqueness
+  - System role enforces clean story output without prefaces
+- **Step 2 - Edit & Fix**: Second OpenAI API call (temp 0.3) corrects grammar and naturalness
+  - Latvian Editor Prompt: Professional Latvian language editor that fixes grammar errors, awkward phrasing, incorrect word choices
+  - English Editor Prompt: Equivalent editor for English and other languages
+  - System role ensures only corrected story text is returned
+- Final corrected text sent to user for approval before audio generation
 - Supports theme-based or custom prompt modes
-- Language-aware story generation (200-300 word stories)
+- Language-aware story generation with native-quality grammar
 
 **Audio Generation**:
 - ElevenLabs API for text-to-speech conversion
-- Multilingual audio support matching story language
-- MP3 format audio files stored in Replit App Storage
+- Model: **Eleven v3 (Alpha)** - Most expressive model with superior multilingual support
+- Voice configuration per language:
+  - Latvian: Liam voice (TX3LPaxmHKxFdv7VOQHJ)
+  - English: Rachel voice (21m00Tcm4TlvDq8ikWAM)
+  - Spanish/French: Bella voice (EXAVITQu4vr4xnSDxMaL)
+- MP3 format audio files stored in Replit Object Storage
+- HTTP range request support for streaming and seeking
 
 ### Payment Processing
 
