@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   credits: integer("credits").notNull().default(3), // Free trial: 3 credits
   totalStories: integer("total_stories").notNull().default(0),
+  isAdmin: varchar("is_admin", { length: 5 }).notNull().default('false'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -11,6 +11,7 @@ import Creator from "@/pages/creator";
 import Bookshelf from "@/pages/bookshelf";
 import BuyCredits from "@/pages/buy-credits";
 import Dashboard from "@/pages/dashboard";
+import Admin from "@/pages/admin";
 import SharedStory from "@/pages/shared-story";
 import NotFound from "@/pages/not-found";
 
@@ -28,6 +29,7 @@ function Router() {
             <Route path="/" component={Creator} />
             <Route path="/bookshelf" component={Bookshelf} />
             <Route path="/dashboard" component={Dashboard} />
+            <Route path="/admin" component={Admin} />
             <Route path="/buy-credits" component={BuyCredits} />
           </>
         )}

@@ -338,6 +338,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin middleware
+  const isAdmin = async (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).send("Unauthorized");
+    }
+    const user = await storage.getUserById(req.user.claims.sub);
+    if (!user || user.isAdmin !== 'true') {
+      return res.status(403).send("Admin access required");
+    }
+    next();
+  };
+
+  // Admin: Get all users
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error: any) {
+      console.error("Get all users error:", error);
+      res.status(500).send("Failed to fetch users");
+    }
+  });
+
+  // Admin: Get all payments
+  app.get("/api/admin/payments", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const payments = await storage.getAllPayments();
+      res.json(payments);
+    } catch (error: any) {
+      console.error("Get all payments error:", error);
+      res.status(500).send("Failed to fetch payments");
+    }
+  });
+
   // Create Stripe payment intent
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
 

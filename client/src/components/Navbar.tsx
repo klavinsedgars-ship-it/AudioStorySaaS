@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Coins, BookOpen, CreditCard, LogOut, Sparkles } from "lucide-react";
+import { Coins, BookOpen, CreditCard, LogOut, Sparkles, Shield } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated } = useAuth();
@@ -64,6 +64,18 @@ export default function Navbar() {
                 Dashboard
               </Button>
             </Link>
+            {user?.isAdmin === 'true' && (
+              <Link href="/admin">
+                <Button 
+                  variant={location === "/admin" ? "secondary" : "ghost"}
+                  className="gap-2"
+                  data-testid="link-admin"
+                >
+                  <Shield className="w-4 h-4" />
+                  Admin
+                </Button>
+              </Link>
+            )}
             <Link href="/buy-credits">
               <Button 
                 variant={location === "/buy-credits" ? "secondary" : "ghost"}
