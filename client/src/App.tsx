@@ -45,6 +45,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <TooltipProvider>
+          <div className="fixed inset-0 -z-10 magical-bg-pattern" aria-hidden="true" />
           <Toaster />
           <Router />
         </TooltipProvider>

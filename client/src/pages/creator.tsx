@@ -257,41 +257,69 @@ export default function Creator() {
                 <Button
                   variant={generationType === "theme" ? "default" : "outline"}
                   onClick={() => setGenerationType("theme")}
-                  className="h-24 flex-col gap-2"
+                  size="lg"
+                  className="h-28 flex-col gap-3"
                   data-testid="button-mode-theme"
                 >
-                  <Sparkles className="w-6 h-6" />
-                  <span className="text-sm">{t('creator.chooseTheme')}</span>
+                  <Sparkles className="w-8 h-8" />
+                  <span className="text-base">{t('creator.chooseTheme')}</span>
                 </Button>
                 <Button
                   variant={generationType === "custom" ? "default" : "outline"}
                   onClick={() => setGenerationType("custom")}
-                  className="h-24 flex-col gap-2"
+                  size="lg"
+                  className="h-28 flex-col gap-3"
                   data-testid="button-mode-custom"
                 >
-                  <Wand2 className="w-6 h-6" />
-                  <span className="text-sm">{t('creator.customPrompt')}</span>
+                  <Wand2 className="w-8 h-8" />
+                  <span className="text-base">{t('creator.customPrompt')}</span>
                 </Button>
               </div>
             </div>
 
             {generationType === "theme" && (
-              <div className="space-y-2">
-                <Label className="text-base font-medium">{t('creator.theme')}</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="space-y-3">
+                <Label className="text-base font-medium font-display">{t('creator.theme')}</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {STORY_THEMES.map((theme) => {
                     const Icon = THEME_ICONS[theme] || Sparkles;
+                    const isSelected = selectedTheme === theme;
                     return (
-                      <Button
+                      <Card
                         key={theme}
-                        variant={selectedTheme === theme ? "default" : "outline"}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => setSelectedTheme(theme)}
-                        className="h-20 flex-col gap-2 text-sm"
-                        data-testid={`button-theme-${theme.toLowerCase().replace(/\s+/g, '-')}`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedTheme(theme);
+                          }
+                        }}
+                        className={`
+                          cursor-pointer transition-all hover:scale-[1.02] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                          ${isSelected 
+                            ? 'border-2 border-primary ring-2 ring-primary/20 bg-primary/5' 
+                            : 'border-2 border-transparent hover:border-primary/30'
+                          }
+                        `}
+                        data-testid={`card-theme-${theme.toLowerCase().replace(/\s+/g, '-')}`}
                       >
-                        <Icon className="w-5 h-5" />
-                        {t(`themes.${theme}`)}
-                      </Button>
+                        <CardContent className="p-0 flex flex-col items-center justify-center gap-3 min-h-[100px]">
+                          <div className={`
+                            p-3 rounded-xl transition-colors
+                            ${isSelected 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-primary/10 text-primary'
+                            }
+                          `}>
+                            <Icon className="w-8 h-8" />
+                          </div>
+                          <p className="text-sm font-display font-medium text-center leading-tight">
+                            {t(`themes.${theme}`)}
+                          </p>
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
