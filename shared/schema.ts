@@ -49,7 +49,7 @@ export const stories = pgTable("stories", {
   theme: varchar("theme"),
   customPromptText: text("custom_prompt_text"),
   storyText: text("story_text").notNull(),
-  audioUrl: varchar("audio_url"),
+  audioPath: varchar("audio_path"),
   language: varchar("language", { length: 5 }).notNull().default('en'),
   isFavorite: varchar("is_favorite", { length: 5 }).notNull().default('false'),
   createdAt: timestamp("created_at").defaultNow(),

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { LANGUAGE_OPTIONS, CREDIT_PACKAGES } from "@shared/schema";
 import Stripe from "stripe";
+import { Client } from "@replit/object-storage";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -13,6 +14,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+
+// Singleton Object Storage client
+const objectStorageClient = new Client({ bucketId: process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID });
 
 // Rate limiting - simple in-memory implementation
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -123,24 +127,80 @@ async function generateAudioFromText(text: string, language: string): Promise<Ar
 }
 
 async function uploadAudioToStorage(audioBuffer: ArrayBuffer, filename: string): Promise<string> {
-  const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
   const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
+  const fullPath = `${privateDir}/${filename}`;
+  
+  const buffer = Buffer.from(audioBuffer);
+  await objectStorageClient.uploadFromBytes(fullPath, buffer);
+  
+  return fullPath;
+}
 
-  const uploadUrl = `https://storage.replit.com/buckets/${bucketId}/objects/${privateDir}/${filename}`;
-
-  const uploadResponse = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "audio/mpeg",
-    },
-    body: audioBuffer,
-  });
-
-  if (!uploadResponse.ok) {
-    throw new Error("Failed to upload audio to object storage");
+async function streamAudioFile(audioPath: string, req: any, res: any, isPublic: boolean = false) {
+  try {
+    const { ok, value, error } = await objectStorageClient.downloadAsBytes(audioPath);
+    
+    if (!ok) {
+      console.error("Failed to download audio from storage:", error);
+      return res.status(404).send("Audio file not found");
+    }
+    
+    const buffer = value[0];
+    const fileSize = buffer.length;
+    
+    const range = req.headers.range;
+    const cacheControl = isPublic ? "public, max-age=31536000" : "private, max-age=31536000";
+    
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      let start = parseInt(parts[0], 10);
+      let end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      
+      // Validate range values
+      if (isNaN(start) || isNaN(end)) {
+        res.writeHead(416, {
+          "Content-Range": `bytes */${fileSize}`,
+        });
+        return res.end();
+      }
+      
+      // Clamp values to valid range
+      start = Math.max(0, start);
+      end = Math.min(end, fileSize - 1);
+      
+      // Check if range is satisfiable
+      if (start >= fileSize || start > end) {
+        res.writeHead(416, {
+          "Content-Range": `bytes */${fileSize}`,
+        });
+        return res.end();
+      }
+      
+      const chunkSize = end - start + 1;
+      
+      res.writeHead(206, {
+        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+        "Accept-Ranges": "bytes",
+        "Content-Length": chunkSize,
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": cacheControl,
+      });
+      
+      res.end(buffer.slice(start, end + 1));
+    } else {
+      res.writeHead(200, {
+        "Content-Length": fileSize,
+        "Content-Type": "audio/mpeg",
+        "Accept-Ranges": "bytes",
+        "Cache-Control": cacheControl,
+      });
+      
+      res.end(buffer);
+    }
+  } catch (error: any) {
+    console.error("Audio streaming error:", error);
+    res.status(404).send("Audio file not found");
   }
-
-  return `https://storage.replit.com/buckets/${bucketId}/objects/${privateDir}/${filename}`;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -233,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customPromptText: validated.customPromptText,
         storyText: validated.storyText,
         language: validated.language,
-        audioUrl: null,
+        audioPath: null,
         generationAttempt: 1,
       });
 
@@ -242,10 +302,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Upload to object storage
       const filename = `story-${story.id}-${Date.now()}.mp3`;
-      const audioUrl = await uploadAudioToStorage(audioBuffer, filename);
+      const audioPath = await uploadAudioToStorage(audioBuffer, filename);
 
-      // Update story with audio URL
-      await storage.updateStoryAudio(story.id, audioUrl);
+      // Update story with audio path
+      await storage.updateStoryAudio(story.id, audioPath);
 
       // Deduct credit
       await storage.updateUserCredits(user.id, user.credits - 1);
@@ -269,6 +329,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Get stories error:", error);
       res.status(500).send("Failed to fetch stories");
+    }
+  });
+
+  // Serve audio for user's story (authenticated, owner-only)
+  app.get("/api/audio/:storyId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { storyId } = req.params;
+      
+      const story = await storage.getStory(storyId);
+      
+      if (!story) {
+        return res.status(404).send("Story not found");
+      }
+      
+      if (story.userId !== userId) {
+        return res.status(403).send("Unauthorized access to story");
+      }
+      
+      if (!story.audioPath) {
+        return res.status(404).send("Audio not available for this story");
+      }
+      
+      await streamAudioFile(story.audioPath, req, res, false);
+    } catch (error: any) {
+      console.error("Audio serve error:", error);
+      res.status(500).send("Failed to serve audio");
+    }
+  });
+
+  // Serve audio for shared story (public, token-based)
+  app.get("/api/shared-audio/:token", async (req: any, res) => {
+    try {
+      const { token } = req.params;
+      
+      const story = await storage.getSharedStory(token);
+      
+      if (!story) {
+        return res.status(404).send("Shared story not found");
+      }
+      
+      if (!story.audioPath) {
+        return res.status(404).send("Audio not available for this story");
+      }
+      
+      await streamAudioFile(story.audioPath, req, res, true);
+    } catch (error: any) {
+      console.error("Shared audio serve error:", error);
+      res.status(500).send("Failed to serve audio");
     }
   });
 
