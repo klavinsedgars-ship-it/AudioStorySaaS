@@ -109,7 +109,8 @@ export default function Creator() {
         customPrompt: generationType === "custom" ? customPrompt : null,
       });
 
-      setStoryText(response.storyText);
+      const data = await response.json();
+      setStoryText(data.storyText);
     } catch (error: any) {
       if (isUnauthorizedError(error)) {
         toast({
