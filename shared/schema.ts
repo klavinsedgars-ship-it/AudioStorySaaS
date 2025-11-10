@@ -51,6 +51,8 @@ export const stories = pgTable("stories", {
   storyText: text("story_text").notNull(),
   audioPath: varchar("audio_path"),
   language: varchar("language", { length: 5 }).notNull().default('en'),
+  imageUrl: text("image_url"), // Path to generated illustration
+  status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending', 'gen_audio', 'gen_image', 'complete', 'failed_audio', 'failed_image'
   isFavorite: varchar("is_favorite", { length: 5 }).notNull().default('false'),
   createdAt: timestamp("created_at").defaultNow(),
   generationAttempt: integer("generation_attempt").notNull().default(1),
