@@ -273,12 +273,16 @@ async function uploadAudioToStorage(audioBuffer: ArrayBuffer, filename: string):
 }
 
 async function streamAudioFile(audioPath: string, req: any, res: any, isPublic: boolean = false) {
+  return streamFile(audioPath, req, res, isPublic, "audio/mpeg");
+}
+
+async function streamFile(filePath: string, req: any, res: any, isPublic: boolean = false, contentType: string = "audio/mpeg") {
   try {
-    const { ok, value, error } = await objectStorageClient.downloadAsBytes(audioPath);
+    const { ok, value, error } = await objectStorageClient.downloadAsBytes(filePath);
     
     if (!ok) {
-      console.error("Failed to download audio from storage:", error);
-      return res.status(404).send("Audio file not found");
+      console.error("Failed to download file from storage:", error);
+      return res.status(404).send("File not found");
     }
     
     const buffer = value[0];
@@ -318,7 +322,7 @@ async function streamAudioFile(audioPath: string, req: any, res: any, isPublic: 
         "Content-Range": `bytes ${start}-${end}/${fileSize}`,
         "Accept-Ranges": "bytes",
         "Content-Length": chunkSize,
-        "Content-Type": "audio/mpeg",
+        "Content-Type": contentType,
         "Cache-Control": cacheControl,
       });
       
@@ -326,7 +330,7 @@ async function streamAudioFile(audioPath: string, req: any, res: any, isPublic: 
     } else {
       res.writeHead(200, {
         "Content-Length": fileSize,
-        "Content-Type": "audio/mpeg",
+        "Content-Type": contentType,
         "Accept-Ranges": "bytes",
         "Cache-Control": cacheControl,
       });
@@ -334,8 +338,8 @@ async function streamAudioFile(audioPath: string, req: any, res: any, isPublic: 
       res.end(buffer);
     }
   } catch (error: any) {
-    console.error("Audio streaming error:", error);
-    res.status(404).send("Audio file not found");
+    console.error("File streaming error:", error);
+    res.status(404).send("File not found");
   }
 }
 
@@ -645,11 +649,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve audio for user's story (authenticated, owner-only)
+  // Serve audio or image for user's story (authenticated, owner-only)
   app.get("/api/audio/:storyId", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { storyId } = req.params;
+      const { asset } = req.query; // 'audio' or 'image'
       
       const story = await storage.getStory(storyId);
       
@@ -661,14 +666,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Unauthorized access to story");
       }
       
-      if (!story.audioPath) {
-        return res.status(404).send("Audio not available for this story");
+      // Determine which asset to serve
+      const isImage = asset === 'image';
+      const filePath = isImage ? story.imageUrl : story.audioPath;
+      const assetType = isImage ? 'Image' : 'Audio';
+      
+      if (!filePath) {
+        return res.status(404).send(`${assetType} not available for this story`);
       }
       
-      await streamAudioFile(story.audioPath, req, res, false);
+      // Stream the file (audio or image)
+      if (isImage) {
+        await streamFile(filePath, req, res, false, 'image/png');
+      } else {
+        await streamAudioFile(filePath, req, res, false);
+      }
     } catch (error: any) {
-      console.error("Audio serve error:", error);
-      res.status(500).send("Failed to serve audio");
+      console.error("Asset serve error:", error);
+      res.status(500).send("Failed to serve asset");
     }
   });
 
