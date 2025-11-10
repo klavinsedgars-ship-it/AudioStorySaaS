@@ -204,7 +204,7 @@ Return ONLY the completed, corrected story in ${langName}. Do not add any commen
       Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: "You are a professional editor. Return ONLY the corrected story text - no comments, no explanations, no prefaces." },
         { role: "user", content: finalEditorPrompt },
