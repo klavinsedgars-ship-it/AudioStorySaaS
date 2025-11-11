@@ -1,0 +1,291 @@
+Replit Prompt: Full "Magical Storybook" Redesign (v9)
+Project Goal: Transform the entire application from a functional SaaS dashboard into a magical, friendly, and appealing storybook experience. This is a complete overhaul of the UI, UX, text, and asynchronous workflows to improve the product's "sell-ability" and user delight, inspired by "kids-party" website examples.
+
+This implementation will be guided by the project briefs for the visual redesign (v7), the new landing page (v8), and the asynchronous generation pipeline (v9).
+
+Pillar 1: The "Cozy & Friendly" Visual Redesign (Brief v7)
+Goal: Change the site's core feel from "tech" to "storybook."
+
+Target: client/src/index.css & tailwind.config.ts
+
+Action: Implement the "Cozy" theme colors.
+
+In client/src/index.css, update the :root (light mode) variables:
+
+--background: 38 77% 98% (warm parchment)
+
+--card: 0 0% 100% (warm white)
+
+--border: 38 14% 90% (soft, warm gray)
+
+Update the .dark (dark mode) variables:
+
+--background: 240 30% 12% (cozy night sky/indigo)
+
+--card: 240 20% 15% (slightly lighter indigo)
+
+--border: 240 10% 25% (soft dark border)
+
+Target: tailwind.config.ts
+
+Action: Ensure the fontFamily includes display: ["Quicksand", "sans-serif"] and font-serif: ["Georgia", "serif"].
+
+Target: client/src/components/ui/card.tsx
+
+Action: Soften card shapes. Change rounded-lg in the Card component's className to rounded-2xl and shadow-lg.
+
+Target: client/src/components/ui/button.tsx
+
+Action: Soften button shapes. Change rounded-md in buttonVariants to rounded-xl.
+
+Action: Apply the font-display to all buttons by adding font-display to the buttonVariants base class.
+
+Target: client/src/App.tsx
+
+Action: Add the global atmospheric background. Inside the App function, add <div className="fixed inset-0 -z-10 magical-bg-pattern" aria-hidden="true" /> to create a subtle, magical pattern behind all content. (The CSS for .magical-bg-pattern is already in index.css).
+
+Pillar 2: The "Selling" Landing Page (Brief v8)
+Goal: Replace the placeholder landing page with a unique, appealing, and SEO-friendly marketing page that sells the product and highlights the "3 Free Credits" offer.
+
+Target: client/src/pages/landing.tsx
+
+Action: Completely overwrite the existing file's content with the new, multi-section landing page from "Project Brief: Full Landing Page Redesign (v8)".
+
+This new code must:
+
+Import and use react-helmet to add the <title> and <meta name="description"> tags for SEO.
+
+Feature the H1 title: {t('landing.title')} ("Bedtime Stories, Starring Your Child").
+
+Feature the primary CTA: {t('landing.cta')} ("Start Your First Story (3 Free Credits)").
+
+Include the 3-step "How It Works" section using Card components with icons (User, Sparkles, Mic).
+
+Include the "Feature Highlights" (Multilingual, Personalization) and "Coming Soon" (Upsell) sections.
+
+Include the redesigned 3-card Pricing section, linking to /api/login.
+
+Use font-display (Quicksand) for all headings, titles, and buttons.
+
+Target: client/src/hooks/useTranslation.ts
+
+Action: Add all new translation keys required by the new landing.tsx page (e.g., landing.seo.title, landing.title, landing.subtitle, landing.cta, landing.howItWorks.step1Title, landing.feature1.title, landing.upsell.voiceTitle, landing.pricing.title, landing.finalCta.title, etc.) for all supported languages (en, lv, es, fr).
+
+Pillar 3: The "Magical Creator" UX (Brief v7 & v8-Creator)
+Goal: Refactor the creator page into a "Creator & Storybook" two-column layout to make the process feel interactive and magical.
+
+Target: client/src/pages/creator.tsx
+
+Action: Refactor the page layout.
+
+Change the main container from max-w-2xl to max-w-7xl.
+
+Implement a two-column grid: <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">.
+
+Left Column (lg:order-1): Place the entire creator form Card here.
+
+Right Column (lg:order-2): Create a new div here that is sticky (lg:sticky lg:top-24 lg:h-fit).
+
+Action: Move the "Generate Story Preview" button out of any conditional logic and place it permanently at the bottom of the Left Column (under the form Card).
+
+Action: In the Right Column div, add the new <StorybookPreview /> component.
+
+Action: Move the "Try Again" and "Create Audio & Save" buttons into the Right Column, directly underneath the <StorybookPreview /> component. They should only be rendered if storyText && !isGenerating.
+
+Action (Theme Selection): Replace the existing theme Button grid with a new grid-cols-2 md:grid-cols-3 gap-4 of illustrated Card components.
+
+Each card should be clickable to set the theme.
+
+The CardContent should show an icon (from THEME_ICONS) and the theme name (e.g., {t('themes.Space Adventure')}).
+
+The selected card must have a clear active state (e.g., border-primary).
+
+Target: client/src/components/StorybookPreview.tsx
+
+Action: Implement this component as specified in the briefs.
+
+It must be a Card styled to look like an open book (e.g., with a "parchment" background: bg-gradient-to-br from-[hsl(38,77%,98%)] to-[hsl(38,60%,96%)] dark:from-[hsl(240,20%,18%)] dark:to-[hsl(240,15%,16%)]).
+
+It must handle 3 states:
+
+Default (!storyText && !isLoading): Show an "empty state" with an illustration (like BookOpen) and text (e.g., "Your story is waiting to be written...").
+
+Loading (isLoading): Show the <MagicalLoading /> component.
+
+Success (storyText): Show a title (e.g., ${heroName}'s Adventure) using font-display, and the storyText itself using font-serif.
+
+Pillar 4: The "Magical Loading" Pipeline (Brief v9)
+Goal: Implement the asynchronous generation pipeline to provide an instant response and a "magical loading" experience.
+
+Target: shared/schema.ts
+
+Action: Modify the stories table.
+
+Add imageUrl: text("image_url").
+
+Add status: varchar("status", { length: 20 }).notNull().default('pending').
+
+Action (Post-Code): Run npm run db:push in the shell to apply the migration.
+
+Target: server/storage.ts
+
+Action: Add the new helper functions to IStorage and DbStorage:
+
+updateStoryAudio(storyId: string, audioPath: string): Promise<void>
+
+updateStoryImage(storyId: string, imageUrl: string): Promise<void>
+
+updateStoryStatus(storyId: string, status: string): Promise<void>
+
+Action: Implement these functions using db.update(stories).set(...).
+
+Target: server/routes.ts
+
+Action: Refactor the /api/generate-story-audio endpoint.
+
+It must be instant.
+
+Inside the try block:
+
+Check user credits.
+
+Call storage.createStory to save the story with status: 'pending', audioPath: null, and imageUrl: null.
+
+Call storage.updateUserCredits to deduct 1 credit.
+
+Respond immediately to the user: res.json({ success: true, storyId: story.id }).
+
+After responding, call the two background jobs (fire-and-forget):
+
+void (async () => { ... })()
+
+Inside this async block:
+
+const audioSuccess = await generateAndSaveAudio(story.id, ...);
+
+if (audioSuccess) { await generateAndSaveIllustration(story.id, ...); }
+
+Action: Implement the async function generateAndSaveAudio(...).
+
+It must:
+
+await storage.updateStoryStatus(storyId, 'gen_audio').
+
+Call generateAudioFromText() (using eleven_v3 model).
+
+Call uploadAudioToStorage().
+
+await storage.updateStoryAudio(storyId, audioPath).
+
+await storage.updateStoryStatus(storyId, 'gen_image').
+
+Return true on success, false on failure (and set status to failed_audio).
+
+Include retry logic (3 attempts).
+
+Action: Implement the async function generateAndSaveIllustration(...).
+
+It must:
+
+Generate a DALL-E 3 prompt using gpt-4o-mini.
+
+Generate the image using dall-e-3.
+
+Fetch the image from the temporary URL.
+
+Upload the image buffer to our object storage (re-use uploadAudioToStorage).
+
+await storage.updateStoryImage(storyId, imagePath).
+
+await storage.updateStoryStatus(storyId, 'complete').
+
+Return true on success, false on failure (and set status to failed_image).
+
+Include retry logic (2 attempts).
+
+Action: Add the new polling endpoint /api/story/status/:storyId.
+
+It must be authenticated.
+
+It must fetch the story, check ownership (story.userId === userId), and return { id, status, audioPath, imageUrl }.
+
+Action: Modify /api/audio/:storyId.
+
+Add logic to check req.query.asset === 'image'.
+
+If true, serve story.imageUrl with content type image/png.
+
+If false, serve story.audioPath with content type audio/mpeg.
+
+(The streamFile function in server/routes.ts already supports this logic).
+
+Target: client/src/App.tsx
+
+Action: Add the new route for the loading page:
+
+<Route path="/story/generating/:storyId" component={StoryLoading} />
+
+Target: client/src/pages/creator.tsx
+
+Action: Update the handleCreateAudio function.
+
+On success from the /api/generate-story-audio POST request, do not go to the bookshelf.
+
+Instead, use setLocation (from wouter) to redirect to /story/generating/${data.storyId}.
+
+Target: client/src/pages/story-loading.tsx
+
+Action: Completely overwrite the existing file with the new "magical loading" page from "Project Brief UPDATE: Asynchronous Generation Pipeline (v9)".
+
+This new page must:
+
+Use useParams to get the storyId.
+
+Poll the /api/story/status/:storyId endpoint (e.g., every 2.5 seconds).
+
+Show a step-by-step progress UI (e.g., "Preparing story," "Creating audio narration," "Generating illustration").
+
+Show "Completed" (CheckCircle) or "In Progress" (Loader2) icons for each step based on the polled status.
+
+Handle failed_audio and failed_image states by showing an error message.
+
+Automatically redirect to /bookshelf when the status becomes complete.
+
+Include a timeout/error message if generation takes too long (e.g., > 3-5 minutes).
+
+Target: client/src/pages/bookshelf.tsx
+
+Action: Update the story Card component.
+
+Add an <AspectRatio ratio={1 / 1}> component at the top of the card.
+
+Inside, check story.status:
+
+If story.status === 'complete' and story.imageUrl, show the <img> tag with src={'/api/audio/${story.id}?asset=image'}.
+
+If status is pending, gen_audio, or gen_image, show a placeholder with a Loader2 and a message like "Generating illustration...".
+
+For the audio player, if !story.audioPath, show a small loading indicator instead of the player.
+
+Pillar 5: High-Quality, "Unique" Text (Brief: Fixing Story Quality)
+Goal: Ensure all generated text (especially non-English) is grammatically perfect and sounds natural.
+
+Target: server/routes.ts
+
+Action: Refactor the generateStoryText function.
+
+It must perform a two-step "Generate-then-Edit" process.
+
+Step 1 (Draft): Call OpenAI (gpt-4o-mini, temp 0.9) with the masterPrompt (using the correct language, e.g., the full Latvian prompt).
+
+Step 2 (Edit): Get the flawedStoryText from Step 1. Call OpenAI again (this time with gpt-4o and temp 0.3) using the powerful editorPrompt (e.g., "Tu esi profesionāls latviešu valodas redaktors...").
+
+Step 3 (Return): Send only the final, corrected text from Step 2 back to the user: res.json({ storyText: correctedStoryText }).
+
+Target: shared/schema.ts
+
+Action: Verify the LANGUAGE_OPTIONS array. Ensure the Latvian voice ID is set to "Liam" (TX3LPaxmHKxFdv7VOQHJ).
+
+Target: server/routes.ts
+
+Action: In generateAudioFromText, ensure the model_id for ElevenLabs is set to eleven_v3 for the best multilingual support.
