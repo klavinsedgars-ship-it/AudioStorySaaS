@@ -105,8 +105,13 @@ export default function Creator() {
       return;
     }
 
+    // Clear previous story data before generating new text
     setIsGenerating(true);
     setStoryText(null);
+    setCurrentStoryId(null);
+    setAudioPath(null);
+    setImagePath(null);
+    setStoryStatus("idle");
 
     try {
       const response = await apiRequest("POST", "/api/generate-story-text", {
@@ -155,7 +160,6 @@ export default function Creator() {
     }
 
     setIsCreatingAudio(true);
-    setStoryStatus("generating");
 
     try {
       const response = await apiRequest("POST", "/api/generate-story-audio", {
@@ -169,6 +173,9 @@ export default function Creator() {
 
       const data = await response.json();
       setCurrentStoryId(data.storyId);
+      
+      // Only start polling after we have the new storyId
+      setStoryStatus("generating");
 
       toast({
         title: "Story Started!",
