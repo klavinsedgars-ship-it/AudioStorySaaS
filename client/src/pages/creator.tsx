@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { STORY_THEMES } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown, Palmtree, Snowflake, Zap, Flame, Flower, Bot, Gem, Clock, BookHeart, type LucideIcon } from "lucide-react";
+import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown, Palmtree, Snowflake, Zap, Flame, Flower, Bot, Gem, Clock, type LucideIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { MagicalLoading } from "@/components/MagicalLoading";
 import { StorybookPreview } from "@/components/StorybookPreview";
@@ -267,24 +267,17 @@ export default function Creator() {
   }, [currentStoryId, storyStatus, toast]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/15 via-accent/15 to-secondary/15 pt-24 pb-16 relative overflow-hidden">
-      {/* Floating decorative elements */}
-      <Sparkles className="absolute top-20 left-10 w-10 h-10 text-primary/20 animate-bounce" style={{animationDelay: '0.3s'}} />
-      <Wand2 className="absolute top-40 right-20 w-12 h-12 text-secondary/20 animate-bounce" style={{animationDelay: '0.7s'}} />
-      <BookHeart className="absolute bottom-40 left-20 w-14 h-14 text-accent/20 animate-bounce" style={{animationDelay: '1s'}} />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-background to-background dark:from-purple-950/20 dark:via-background dark:to-background pt-24 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8">
         {/* Two-column grid for desktop, single column for mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           
           {/* LEFT COLUMN: The Form */}
           <div className="lg:order-1">
-            <Card className="border-4 border-primary/30 shadow-2xl bg-gradient-to-br from-primary/5 to-accent/5">
-          <CardHeader className="pb-4 border-b-4 border-primary/10">
-            <CardTitle className="font-display text-4xl text-center text-primary font-black flex items-center justify-center gap-3" data-testid="text-creator-title">
-              <Sparkles className="w-8 h-8" />
+            <Card className="border-2 shadow-xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="font-display text-3xl text-center bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid="text-creator-title">
               {t('creator.title')}
-              <Wand2 className="w-8 h-8" />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -438,17 +431,17 @@ export default function Creator() {
         <Button
           onClick={handleGeneratePreview}
           disabled={isGenerating}
-          className="w-full h-16 gap-3 text-lg font-black mt-6 shadow-2xl border-4 border-white/30 bg-gradient-to-r from-primary via-secondary to-accent hover:scale-105 transition-all"
+          className="w-full h-12 gap-2 text-base mt-6"
           data-testid="button-generate-preview"
         >
           {isGenerating ? (
             <>
-              <Loader2 className="w-6 h-6 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               {t('creator.generating')}
             </>
           ) : (
             <>
-              <Sparkles className="w-6 h-6" />
+              <Sparkles className="w-4 h-4" />
               {t('creator.generatePreview')}
             </>
           )}
