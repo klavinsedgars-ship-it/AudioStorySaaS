@@ -109,12 +109,14 @@ Preferred communication style: Simple, everyday language.
   - English: Rachel voice (21m00Tcm4TlvDq8ikWAM)
   - Spanish/French: Bella voice (EXAVITQu4vr4xnSDxMaL)
 - MP3 format audio files stored in Replit Object Storage
+- **Streaming optimization**: Audio streams directly from ElevenLabs to Object Storage using `/stream` endpoint and `Readable.fromWeb()` conversion to avoid loading entire files into server memory
 - HTTP range request support for streaming and seeking
 
 **Illustration Generation**:
 - OpenAI DALL-E 3 for story illustrations
 - Two-step process: gpt-4o-mini creates concise art prompt, then DALL-E 3 generates 1024x1024 PNG image
 - Images stored in Replit Object Storage alongside audio files
+- **Streaming optimization**: Images stream directly from OpenAI's temporary URL to Object Storage without buffering in server memory
 - Served via `/api/audio/:storyId?asset=image` endpoint
 
 ### Async Generation Pipeline
