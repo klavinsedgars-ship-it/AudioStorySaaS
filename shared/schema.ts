@@ -51,8 +51,8 @@ export const stories = pgTable("stories", {
   storyText: text("story_text").notNull(),
   audioPath: varchar("audio_path"),
   language: varchar("language", { length: 5 }).notNull().default('en'),
-  imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`), // Array of illustration paths (up to 5 images)
-  status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending', 'gen_audio', 'gen_image', 'gen_image_partial', 'complete', 'failed_audio', 'failed_image'
+  imageUrl: text("image_url"), // Path to generated illustration
+  status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending', 'gen_audio', 'gen_image', 'complete', 'failed_audio', 'failed_image'
   isFavorite: varchar("is_favorite", { length: 5 }).notNull().default('false'),
   createdAt: timestamp("created_at").defaultNow(),
   generationAttempt: integer("generation_attempt").notNull().default(1),

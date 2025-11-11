@@ -390,142 +390,86 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
   }
 }
 
-// Background job: Generate and save 5 illustrations (with retry logic)
+// Background job: Generate and save illustration (with retry logic)
 // NOTE: This function should only be called after audio generation succeeds
 async function generateAndSaveIllustration(storyId: string, storyText: string, heroName: string): Promise<boolean> {
+  const maxRetries = 2;
+  const retryDelays = [1000, 3000];
+  
   try {
-    console.log(`[IMAGE] Starting 5-image generation for story ${storyId}`);
+    console.log(`[IMAGE] Starting image generation for story ${storyId}`);
     
-    // Step 1: Generate 5 scene prompts using a single AI call
-    const promptGenerationRequest = `You are an AI Art Director for a children's storybook app.
-Read this story and create EXACTLY 5 distinct visual scene prompts for DALL-E 3.
-Each prompt must be a "whimsical, magical, children's book illustration" of a key moment.
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Step 1: Create image prompt using gpt-4o-mini
+        const summarizerPrompt = `You are an AI assistant for a children's storybook app.
+Summarize the following story text into a single, visually descriptive DALL-E 3 prompt.
+Style: "A whimsical, magical, children's book illustration"
+Example: "A whimsical, magical, children's book illustration of a young boy named Leo and his pet dog flying in a rocket ship past a smiling, ringed planet."
 
-IMPORTANT:
-- Return ONLY a valid JSON array of exactly 5 strings
-- Each string is a complete DALL-E 3 prompt
-- Ensure scenes are diverse and capture different parts of the story
-- No repeated key moments
+STORY TEXT:
+${storyText.substring(0, 1500)}...`;
 
-Example format:
-["A whimsical, magical, children's book illustration of...", "A whimsical, magical, children's book illustration of...", ...]
-
-STORY:
-${storyText.substring(0, 2000)}`;
-
-    const promptResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a children's book illustrator. Return only valid JSON arrays." },
-        { role: "user", content: promptGenerationRequest }
-      ],
-      temperature: 0.5,
-    });
-    
-    let scenePrompts: string[] = [];
-    try {
-      const content = promptResponse.choices[0].message.content || "[]";
-      scenePrompts = JSON.parse(content);
-    } catch (parseError) {
-      console.error(`[IMAGE] Failed to parse scene prompts for story ${storyId}, using fallback`);
-      scenePrompts = [
-        `A whimsical, magical, children's book illustration featuring ${heroName}`,
-        `A whimsical, magical, children's book illustration of ${heroName}'s adventure`,
-        `A whimsical, magical, children's book illustration showing ${heroName} exploring`,
-        `A whimsical, magical, children's book illustration of ${heroName} discovering something magical`,
-        `A whimsical, magical, children's book illustration of ${heroName}'s triumphant moment`,
-      ];
-    }
-    
-    // Ensure we have exactly 5 prompts
-    scenePrompts = scenePrompts.slice(0, 5);
-    while (scenePrompts.length < 5) {
-      scenePrompts.push(`A whimsical, magical, children's book illustration featuring ${heroName}`);
-    }
-    
-    console.log(`[IMAGE] Generated ${scenePrompts.length} scene prompts for story ${storyId}`);
-    
-    // Step 2: Generate images sequentially (to respect DALL-E 3 rate limits)
-    let successCount = 0;
-    const maxRetriesPerImage = 2;
-    
-    for (let i = 0; i < scenePrompts.length; i++) {
-      const prompt = scenePrompts[i];
-      let imageGenerated = false;
-      
-      console.log(`[IMAGE] Generating image ${i + 1}/5 for story ${storyId}`);
-      
-      for (let attempt = 0; attempt < maxRetriesPerImage; attempt++) {
-        try {
-          // Generate image with DALL-E 3
-          const imageResponse = await openai.images.generate({
-            model: "dall-e-3",
-            prompt,
-            n: 1,
-            size: "1024x1024",
-          });
-          
-          if (!imageResponse.data || !imageResponse.data[0] || !imageResponse.data[0].url) {
-            throw new Error("No image URL returned from DALL-E 3");
-          }
-          
-          const tempImageUrl = imageResponse.data[0].url;
-          
-          // Download image from temporary URL
-          const imageFetch = await fetch(tempImageUrl);
-          if (!imageFetch.ok) {
-            throw new Error(`Failed to download image: ${imageFetch.statusText}`);
-          }
-          
-          const imageBuffer = await imageFetch.arrayBuffer();
-          
-          // Upload to our storage with deterministic naming
-          const imageFilename = `story-${storyId}-image-${i}.png`;
-          const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
-          const imageFullPath = `${privateDir}/${imageFilename}`;
-          const buffer = Buffer.from(imageBuffer);
-          await objectStorageClient.uploadFromBytes(imageFullPath, buffer);
-          
-          // Add image URL to database array
-          await storage.addStoryImageUrl(storyId, imageFullPath);
-          
-          console.log(`[IMAGE] Successfully generated image ${i + 1}/5 for story ${storyId}`);
-          successCount++;
-          imageGenerated = true;
-          break; // Success, move to next image
-          
-        } catch (error: any) {
-          console.error(`[IMAGE] Attempt ${attempt + 1}/${maxRetriesPerImage} failed for image ${i + 1} of story ${storyId}:`, error.message);
-          
-          if (attempt < maxRetriesPerImage - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000 + attempt * 2000)); // Exponential backoff
-          }
+        const summaryResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: summarizerPrompt }],
+          temperature: 0.2,
+        });
+        
+        const imagePrompt = summaryResponse.choices[0].message.content || "A whimsical children's book illustration";
+        console.log(`[IMAGE] Generated image prompt for story ${storyId}: ${imagePrompt.substring(0, 100)}...`);
+        
+        // Step 2: Generate image with DALL-E 3
+        const imageResponse = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: imagePrompt,
+          n: 1,
+          size: "1024x1024",
+        });
+        
+        if (!imageResponse.data || !imageResponse.data[0] || !imageResponse.data[0].url) {
+          throw new Error("No image URL returned from DALL-E 3");
+        }
+        
+        const tempImageUrl = imageResponse.data[0].url;
+        
+        // Step 3: Download image from temporary URL
+        const imageFetch = await fetch(tempImageUrl);
+        if (!imageFetch.ok) {
+          throw new Error(`Failed to download image: ${imageFetch.statusText}`);
+        }
+        
+        const imageBuffer = await imageFetch.arrayBuffer();
+        
+        // Step 4: Upload to our storage
+        const imageFilename = `story-${storyId}-illustration.png`;
+        const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
+        const imageFullPath = `${privateDir}/${imageFilename}`;
+        const buffer = Buffer.from(imageBuffer);
+        await objectStorageClient.uploadFromBytes(imageFullPath, buffer);
+        
+        // Step 5: Update database with image path
+        await storage.updateStoryImage(storyId, imageFullPath);
+        await storage.updateStoryStatus(storyId, 'complete');
+        
+        console.log(`[IMAGE] Successfully generated image for story ${storyId}`);
+        return true;
+      } catch (error: any) {
+        lastError = error;
+        console.error(`[IMAGE] Attempt ${attempt + 1}/${maxRetries} failed for story ${storyId}:`, error.message);
+        
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
         }
       }
-      
-      if (!imageGenerated) {
-        console.error(`[IMAGE] Failed to generate image ${i + 1}/5 for story ${storyId} after ${maxRetriesPerImage} attempts`);
-      }
     }
     
-    // Determine final status based on success count
-    if (successCount === 5) {
-      // Full success - all 5 images generated
-      await storage.updateStoryStatus(storyId, 'complete');
-      console.log(`[IMAGE] Successfully generated all 5/5 images for story ${storyId}`);
-      return true;
-    } else if (successCount > 0) {
-      // Partial success - at least one image exists but not all 5
-      await storage.updateStoryStatus(storyId, 'gen_image_partial');
-      console.log(`[IMAGE] Partial success: Generated ${successCount}/5 images for story ${storyId}`);
-      return true;
-    } else {
-      // Zero successes - no images generated
-      await storage.updateStoryStatus(storyId, 'failed_image');
-      console.error(`[IMAGE] Failed to generate any images (0/5) for story ${storyId}`);
-      return false;
-    }
-    
+    // All retries exhausted
+    console.error(`[IMAGE] All retries exhausted for story ${storyId}`);
+    await storage.updateStoryStatus(storyId, 'failed_image');
+    return false;
   } catch (error: any) {
     console.error(`[IMAGE] Fatal error for story ${storyId}:`, error);
     await storage.updateStoryStatus(storyId, 'failed_image');
@@ -624,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storyText: validated.storyText,
         language: validated.language,
         audioPath: null,
-        imageUrls: [],
+        imageUrl: null,
         status: 'pending',
         generationAttempt: 1,
       });
@@ -673,9 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: story.id,
         status: story.status,
         audioPath: story.audioPath,
-        imageUrls: story.imageUrls,
-        completed: story.imageUrls.length,
-        total: 5, // We generate 5 images per story
+        imageUrl: story.imageUrl,
       });
     } catch (error: any) {
       console.error("Story status error:", error);
@@ -700,7 +642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const { storyId } = req.params;
-      const { asset, index } = req.query; // 'audio' or 'image', index for image array
+      const { asset } = req.query; // 'audio' or 'image'
       
       const story = await storage.getStory(storyId);
       
@@ -714,30 +656,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Determine which asset to serve
       const isImage = asset === 'image';
+      const filePath = isImage ? story.imageUrl : story.audioPath;
+      const assetType = isImage ? 'Image' : 'Audio';
       
+      if (!filePath) {
+        return res.status(404).send(`${assetType} not available for this story`);
+      }
+      
+      // Stream the file (audio or image)
       if (isImage) {
-        // Get image from array using index parameter
-        const imageIndex = index ? parseInt(index as string, 10) : 0;
-        
-        // Validate index bounds
-        if (imageIndex < 0 || imageIndex >= story.imageUrls.length) {
-          return res.status(404).send("Image index out of bounds");
-        }
-        
-        const filePath = story.imageUrls[imageIndex];
-        
-        if (!filePath) {
-          return res.status(404).send("Image not available");
-        }
-        
         await streamFile(filePath, req, res, false, 'image/png');
       } else {
-        // Serve audio
-        if (!story.audioPath) {
-          return res.status(404).send("Audio not available for this story");
-        }
-        
-        await streamAudioFile(story.audioPath, req, res, false);
+        await streamAudioFile(filePath, req, res, false);
       }
     } catch (error: any) {
       console.error("Asset serve error:", error);

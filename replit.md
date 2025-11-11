@@ -29,26 +29,12 @@ Preferred communication style: Simple, everyday language.
 
 **Key Pages**:
 - Landing: Unauthenticated marketing page
-- Creator: Story generation workflow with real-time updates (no redirects)
-  - Two-column desktop layout (Left: form controls, Right: StorybookPreview)
-  - Real-time polling of `/api/story/status/:storyId` every 2.5s during audio/image generation
-  - StorybookPreview Component: Finite-state machine with progressive updates
-    - Empty state: Book-styled preview with parchment background
-    - Text preview: Displays generated story text with serif font
-    - Audio generation: Shows AudioStatusPanel with play/pause controls, progress bar
-    - Image generation: Shows ProgressiveImageCarousel with 5 slots (progressive loading)
-    - Complete: Full audio player + 5-image carousel
-  - Race condition protection: Uses ref-based polling guards to prevent stale data contamination
-  - State management: Complete reset on new preview generation (prevents state pollution)
+- Creator: Story generation workflow with two-column desktop layout
+  - Left Column: Form controls (hero name, additional names, theme/custom mode toggles, theme grid, generate button)
+  - Right Column: StorybookPreview component (sticky) showing empty/loading/success states
   - Mobile: Single-column responsive layout that stacks vertically
-- Bookshelf: User's story library with 5-image carousel and favorite/share functionality
-  - Displays ProgressiveImageCarousel for stories with imageUrls array
-  - Status badges for partial success (gen_image_partial) and failures
-  - Audio player integrated in story cards
-- StoryLoading: Legacy fallback page (no longer used in normal flow)
-  - Backwards-compatible with imageUrls array schema
-  - Handles gen_image_partial status
-  - Redirects to Bookshelf on completion
+  - StorybookPreview Component: Book-styled preview with parchment background, serif font for story text, Quicksand font for titles, subtle spine effect
+- Bookshelf: User's story library with favorite/share functionality
 - Dashboard: User statistics and payment history
 - Admin: User and payment management (admin-only)
 - Buy Credits: Credit package purchasing with Stripe integration
@@ -125,55 +111,40 @@ Preferred communication style: Simple, everyday language.
 - MP3 format audio files stored in Replit Object Storage
 - HTTP range request support for streaming and seeking
 
-**Illustration Generation** (5 Images Per Story):
-- **Phase 1 - Scene Prompt Generation**: Single GPT-4o-mini call (temp 0.5) generates 5 diverse scene prompts as JSON array
-  - Each prompt describes a distinct key moment from the story
-  - Fallback prompts generated if JSON parsing fails
-  - Ensures exactly 5 prompts with padding if necessary
-- **Phase 2 - Sequential Image Generation**: DALL-E 3 generates 5 images (1024x1024 PNG) sequentially to respect rate limits
-  - Deterministic naming: `story-{id}-image-{0-4}.png`
-  - Per-image retry logic: 2 attempts with exponential backoff (1000ms, 3000ms)
-  - Progressive database updates: Each successful image appended to `imageUrls` array via `array_append`
-  - Partial success supported: Story marked complete if at least 1 image succeeds
-- **Storage**: All images stored in Replit Object Storage alongside audio files
-- **Serving**: `/api/audio/:storyId?asset=image&index=N` endpoint serves individual images with bounds checking
+**Illustration Generation**:
+- OpenAI DALL-E 3 for story illustrations
+- Two-step process: gpt-4o-mini creates concise art prompt, then DALL-E 3 generates 1024x1024 PNG image
+- Images stored in Replit Object Storage alongside audio files
+- Served via `/api/audio/:storyId?asset=image` endpoint
 
 ### Async Generation Pipeline
 
 **Architecture**: Fire-and-forget in-process background jobs with sequential execution pattern
 
-**Status Flow** (Updated for 5-Image Generation):
+**Status Flow**:
 - Initial: `pending` (story created, credit deducted, background jobs launched)
 - Audio Phase: `gen_audio` (audio generation in progress)
-- Illustration Phase: `gen_image` (audio complete, 5-image generation in progress)
-- Partial Success: `gen_image_partial` (1-4 images generated, some failed)
-- Full Success: `complete` (audio + all 5 images complete)
-- Failure States: `failed_audio` (audio failed, illustration skipped), `failed_image` (audio succeeded, zero images generated)
+- Illustration Phase: `gen_image` (audio complete, illustration in progress)
+- Success: `complete` (both audio and illustration complete)
+- Failure States: `failed_audio` (audio failed, illustration skipped), `failed_image` (audio succeeded, illustration failed)
 
 **Sequential Execution**:
-- Background jobs run sequentially: audio first, then 5 illustrations
-- Illustrations only start if audio succeeds
-- Each image generation tracked independently with retry logic
-- Status transitions based on success count: 5/5 → complete, 1-4/5 → gen_image_partial, 0/5 → failed_image
+- Background jobs run sequentially: audio first, then illustration
+- Illustration only starts if audio succeeds
+- Both jobs return boolean success indicators
+- Status transitions are deterministic and preserve failure states
 
 **Retry Logic**:
 - Audio: 3 attempts with exponential backoff (500ms, 1500ms, 3000ms)
-- Illustrations: 2 attempts per image with exponential backoff (1000ms, 3000ms)
-- Partial failures preserved: Successful images saved even if some fail
+- Illustration: 2 attempts with exponential backoff (1000ms, 3000ms)
 
 **Frontend Integration**:
-- Creator page handles all generation states in real-time (no redirects to StoryLoading)
-- Polling mechanism: Fetches `/api/story/status/:storyId` every 2.5 seconds
-- Race condition protection: activeStoryIdRef guards against stale polling responses
-- State management: Complete state reset on new preview generation prevents pollution
+- Creator redirects to StoryLoading page immediately after story creation
+- StoryLoading polls `/api/story/status/:storyId` every 2.5 seconds
+- Exponential backoff after 30 seconds for reduced server load
 - 5-minute timeout for generation process
-- Components:
-  - **StorybookPreview**: Orchestrator component with finite-state display logic
-  - **AudioStatusPanel**: Audio player with controls, progress bar, time display
-  - **ProgressiveImageCarousel**: 5-slot carousel with Shadcn carousel primitives, progressive loading
-- Progressive updates: Audio and images appear in real-time as backend generates them
-- No page redirects: User stays on Creator page throughout entire generation process
-- Bookshelf integration: ProgressiveImageCarousel reused to display completed stories
+- Displays magical loading animations with progress indicators
+- Redirects to Bookshelf when complete or failed
 
 **Error Handling**:
 - Credits deducted immediately when story creation begins

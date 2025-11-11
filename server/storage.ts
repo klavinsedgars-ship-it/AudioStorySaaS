@@ -1,7 +1,7 @@
 import { db } from "./db";
 import type { UpsertUser, User, InsertStory, Story, InsertSharedStory, SharedStory } from "@shared/schema";
 import { users, stories, payments, sharedStories } from "@shared/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -11,7 +11,7 @@ export interface IStorage {
   updateUserCredits(userId: string, newCredits: number): Promise<void>;
   createStory(story: InsertStory): Promise<Story>;
   updateStoryAudio(storyId: string, audioPath: string): Promise<void>;
-  addStoryImageUrl(storyId: string, imageUrl: string): Promise<void>;
+  updateStoryImage(storyId: string, imageUrl: string): Promise<void>;
   updateStoryStatus(storyId: string, status: string): Promise<void>;
   getStory(storyId: string): Promise<Story | undefined>;
   getUserStories(userId: string): Promise<Story[]>;
@@ -69,12 +69,8 @@ export class DbStorage implements IStorage {
     await db.update(stories).set({ audioPath }).where(eq(stories.id, storyId));
   }
 
-  async addStoryImageUrl(storyId: string, imageUrl: string): Promise<void> {
-    await db.execute(sql`
-      UPDATE ${stories} 
-      SET ${stories.imageUrls} = array_append(${stories.imageUrls}, ${imageUrl})
-      WHERE ${stories.id} = ${storyId}
-    `);
+  async updateStoryImage(storyId: string, imageUrl: string): Promise<void> {
+    await db.update(stories).set({ imageUrl }).where(eq(stories.id, storyId));
   }
 
   async updateStoryStatus(storyId: string, status: string): Promise<void> {
