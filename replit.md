@@ -111,6 +111,47 @@ Preferred communication style: Simple, everyday language.
 - MP3 format audio files stored in Replit Object Storage
 - HTTP range request support for streaming and seeking
 
+**Illustration Generation**:
+- OpenAI DALL-E 3 for story illustrations
+- Two-step process: gpt-4o-mini creates concise art prompt, then DALL-E 3 generates 1024x1024 PNG image
+- Images stored in Replit Object Storage alongside audio files
+- Served via `/api/audio/:storyId?asset=image` endpoint
+
+### Async Generation Pipeline
+
+**Architecture**: Fire-and-forget in-process background jobs with sequential execution pattern
+
+**Status Flow**:
+- Initial: `pending` (story created, credit deducted, background jobs launched)
+- Audio Phase: `gen_audio` (audio generation in progress)
+- Illustration Phase: `gen_image` (audio complete, illustration in progress)
+- Success: `complete` (both audio and illustration complete)
+- Failure States: `failed_audio` (audio failed, illustration skipped), `failed_image` (audio succeeded, illustration failed)
+
+**Sequential Execution**:
+- Background jobs run sequentially: audio first, then illustration
+- Illustration only starts if audio succeeds
+- Both jobs return boolean success indicators
+- Status transitions are deterministic and preserve failure states
+
+**Retry Logic**:
+- Audio: 3 attempts with exponential backoff (500ms, 1500ms, 3000ms)
+- Illustration: 2 attempts with exponential backoff (1000ms, 3000ms)
+
+**Frontend Integration**:
+- Creator redirects to StoryLoading page immediately after story creation
+- StoryLoading polls `/api/story/status/:storyId` every 2.5 seconds
+- Exponential backoff after 30 seconds for reduced server load
+- 5-minute timeout for generation process
+- Displays magical loading animations with progress indicators
+- Redirects to Bookshelf when complete or failed
+
+**Error Handling**:
+- Credits deducted immediately when story creation begins
+- Credits preserved on audio/illustration failure (not refunded)
+- Failed stories remain visible in Bookshelf with status indicators
+- Users can retry from failed stories (future feature)
+
 ### Payment Processing
 
 **Provider**: Stripe (using API version 2025-10-29.clover)
