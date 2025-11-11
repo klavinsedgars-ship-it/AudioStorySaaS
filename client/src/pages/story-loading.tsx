@@ -62,7 +62,7 @@ export default function StoryLoading() {
               description: "You don't have access to this story",
               variant: "destructive",
             });
-            setLocation("/creator");
+            setLocation("/");
             return;
           }
           throw new Error("Failed to fetch story status");
@@ -195,7 +195,7 @@ export default function StoryLoading() {
                 {status === 'failed_audio' ? 'Back to Creator' : 'View Story'}
               </Button>
               <Button 
-                onClick={() => setLocation("/creator")} 
+                onClick={() => setLocation("/")} 
                 variant="outline"
                 className="w-full"
                 data-testid="button-try-again"

@@ -150,7 +150,7 @@ export default function Creator() {
     setIsCreatingAudio(true);
 
     try {
-      await apiRequest("POST", "/api/generate-story-audio", {
+      const response = await apiRequest("POST", "/api/generate-story-audio", {
         storyText,
         language: currentLang,
         heroName,
@@ -159,14 +159,17 @@ export default function Creator() {
         customPromptText: generationType === "custom" ? customPrompt : null,
       });
 
+      const data = await response.json();
+      const storyId = data.storyId;
+
       toast({
-        title: "Success!",
-        description: "Story created! Check your bookshelf.",
+        title: "Story Started!",
+        description: "Creating your magical audio story...",
       });
 
       setTimeout(() => {
-        window.location.href = "/bookshelf";
-      }, 1000);
+        window.location.href = `/story/generating/${storyId}`;
+      }, 500);
     } catch (error: any) {
       if (isUnauthorizedError(error)) {
         toast({
