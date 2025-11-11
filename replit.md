@@ -29,12 +29,26 @@ Preferred communication style: Simple, everyday language.
 
 **Key Pages**:
 - Landing: Unauthenticated marketing page
-- Creator: Story generation workflow with two-column desktop layout
-  - Left Column: Form controls (hero name, additional names, theme/custom mode toggles, theme grid, generate button)
-  - Right Column: StorybookPreview component (sticky) showing empty/loading/success states
+- Creator: Story generation workflow with real-time updates (no redirects)
+  - Two-column desktop layout (Left: form controls, Right: StorybookPreview)
+  - Real-time polling of `/api/story/status/:storyId` every 2.5s during audio/image generation
+  - StorybookPreview Component: Finite-state machine with progressive updates
+    - Empty state: Book-styled preview with parchment background
+    - Text preview: Displays generated story text with serif font
+    - Audio generation: Shows AudioStatusPanel with play/pause controls, progress bar
+    - Image generation: Shows ProgressiveImageCarousel with 5 slots (progressive loading)
+    - Complete: Full audio player + 5-image carousel
+  - Race condition protection: Uses ref-based polling guards to prevent stale data contamination
+  - State management: Complete reset on new preview generation (prevents state pollution)
   - Mobile: Single-column responsive layout that stacks vertically
-  - StorybookPreview Component: Book-styled preview with parchment background, serif font for story text, Quicksand font for titles, subtle spine effect
-- Bookshelf: User's story library with favorite/share functionality
+- Bookshelf: User's story library with 5-image carousel and favorite/share functionality
+  - Displays ProgressiveImageCarousel for stories with imageUrls array
+  - Status badges for partial success (gen_image_partial) and failures
+  - Audio player integrated in story cards
+- StoryLoading: Legacy fallback page (no longer used in normal flow)
+  - Backwards-compatible with imageUrls array schema
+  - Handles gen_image_partial status
+  - Redirects to Bookshelf on completion
 - Dashboard: User statistics and payment history
 - Admin: User and payment management (admin-only)
 - Buy Credits: Credit package purchasing with Stripe integration
@@ -148,12 +162,18 @@ Preferred communication style: Simple, everyday language.
 - Partial failures preserved: Successful images saved even if some fail
 
 **Frontend Integration**:
-- Creator redirects to StoryLoading page immediately after story creation
-- StoryLoading polls `/api/story/status/:storyId` every 2.5 seconds
-- Exponential backoff after 30 seconds for reduced server load
+- Creator page handles all generation states in real-time (no redirects to StoryLoading)
+- Polling mechanism: Fetches `/api/story/status/:storyId` every 2.5 seconds
+- Race condition protection: activeStoryIdRef guards against stale polling responses
+- State management: Complete state reset on new preview generation prevents pollution
 - 5-minute timeout for generation process
-- Displays magical loading animations with progress indicators
-- Redirects to Bookshelf when complete or failed
+- Components:
+  - **StorybookPreview**: Orchestrator component with finite-state display logic
+  - **AudioStatusPanel**: Audio player with controls, progress bar, time display
+  - **ProgressiveImageCarousel**: 5-slot carousel with Shadcn carousel primitives, progressive loading
+- Progressive updates: Audio and images appear in real-time as backend generates them
+- No page redirects: User stays on Creator page throughout entire generation process
+- Bookshelf integration: ProgressiveImageCarousel reused to display completed stories
 
 **Error Handling**:
 - Credits deducted immediately when story creation begins

@@ -123,6 +123,9 @@ export default function Creator() {
         // Stop polling if generation is complete or failed
         if (data.status === 'complete' || data.status === 'gen_image_partial' || data.status === 'failed_audio' || data.status === 'failed_image') {
           clearInterval(pollInterval);
+          
+          // Reset UI state flags to unlock form
+          setIsGenerating(false);
           setIsCreatingAudio(false);
           
           if (data.status === 'complete' || data.status === 'gen_image_partial') {
