@@ -344,7 +344,7 @@ async function streamFile(filePath: string, req: any, res: any, isPublic: boolea
 }
 
 // Background job: Generate and save audio (with retry logic)
-async function generateAndSaveAudio(storyId: string, storyText: string, language: string): Promise<void> {
+async function generateAndSaveAudio(storyId: string, storyText: string, language: string): Promise<boolean> {
   const maxRetries = 3;
   const retryDelays = [500, 1500, 3000];
   
@@ -368,7 +368,7 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
         await storage.updateStoryStatus(storyId, 'gen_image');
         
         console.log(`[AUDIO] Successfully generated audio for story ${storyId}`);
-        return;
+        return true;
       } catch (error: any) {
         lastError = error;
         console.error(`[AUDIO] Attempt ${attempt + 1}/${maxRetries} failed for story ${storyId}:`, error.message);
@@ -382,40 +382,21 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
     // All retries exhausted
     console.error(`[AUDIO] All retries exhausted for story ${storyId}`);
     await storage.updateStoryStatus(storyId, 'failed_audio');
+    return false;
   } catch (error: any) {
     console.error(`[AUDIO] Fatal error for story ${storyId}:`, error);
     await storage.updateStoryStatus(storyId, 'failed_audio');
+    return false;
   }
 }
 
 // Background job: Generate and save illustration (with retry logic)
-async function generateAndSaveIllustration(storyId: string, storyText: string, heroName: string): Promise<void> {
+// NOTE: This function should only be called after audio generation succeeds
+async function generateAndSaveIllustration(storyId: string, storyText: string, heroName: string): Promise<boolean> {
   const maxRetries = 2;
   const retryDelays = [1000, 3000];
   
   try {
-    // Wait for audio generation to complete
-    console.log(`[IMAGE] Waiting for audio generation to complete for story ${storyId}`);
-    let story = await storage.getStory(storyId);
-    let waitAttempts = 0;
-    const maxWaitAttempts = 60; // 2 minutes max wait
-    
-    while (story && story.status !== 'gen_image' && waitAttempts < maxWaitAttempts) {
-      if (story.status === 'failed_audio') {
-        console.log(`[IMAGE] Audio generation failed for story ${storyId}, skipping image generation`);
-        return;
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      story = await storage.getStory(storyId);
-      waitAttempts++;
-    }
-    
-    if (!story || story.status !== 'gen_image') {
-      console.error(`[IMAGE] Timed out waiting for audio generation for story ${storyId}`);
-      return;
-    }
-    
     console.log(`[IMAGE] Starting image generation for story ${storyId}`);
     
     let lastError: Error | null = null;
@@ -474,7 +455,7 @@ ${storyText.substring(0, 1500)}...`;
         await storage.updateStoryStatus(storyId, 'complete');
         
         console.log(`[IMAGE] Successfully generated image for story ${storyId}`);
-        return;
+        return true;
       } catch (error: any) {
         lastError = error;
         console.error(`[IMAGE] Attempt ${attempt + 1}/${maxRetries} failed for story ${storyId}:`, error.message);
@@ -488,9 +469,11 @@ ${storyText.substring(0, 1500)}...`;
     // All retries exhausted
     console.error(`[IMAGE] All retries exhausted for story ${storyId}`);
     await storage.updateStoryStatus(storyId, 'failed_image');
+    return false;
   } catch (error: any) {
     console.error(`[IMAGE] Fatal error for story ${storyId}:`, error);
     await storage.updateStoryStatus(storyId, 'failed_image');
+    return false;
   }
 }
 
@@ -596,9 +579,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return success immediately
       res.json({ success: true, storyId: story.id });
 
-      // Kick off background jobs (fire-and-forget)
-      void generateAndSaveAudio(story.id, validated.storyText, validated.language);
-      void generateAndSaveIllustration(story.id, validated.storyText, validated.heroName);
+      // Kick off background job pipeline (fire-and-forget)
+      // Audio first, then illustration only if audio succeeds
+      void (async () => {
+        const audioSuccess = await generateAndSaveAudio(story.id, validated.storyText, validated.language);
+        if (audioSuccess) {
+          await generateAndSaveIllustration(story.id, validated.storyText, validated.heroName);
+        }
+      })();
 
     } catch (error: any) {
       if (error instanceof z.ZodError) {
