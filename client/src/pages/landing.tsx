@@ -23,36 +23,41 @@ export default function Landing() {
 
       <div className="min-h-screen">
         {/* HERO SECTION */}
-        <section className="relative pt-32 pb-24 md:pt-48 md:pb-32 overflow-hidden bg-gradient-to-b from-purple-50 via-background to-background dark:from-purple-950/20 dark:via-background dark:to-background">
+        <section className="relative pt-32 pb-24 md:pt-48 md:pb-32 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             
             {/* Hero Text (Left) */}
-            <div className="space-y-6 text-center md:text-left">
-              <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-500 bg-clip-text text-transparent" data-testid="text-title">
+            <div className="space-y-6 text-center md:text-left relative z-10">
+              <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold text-primary drop-shadow-lg" data-testid="text-title">
                 {t('landing.title')}
               </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed" data-testid="text-subtitle">
+              <p className="text-xl md:text-2xl text-foreground max-w-2xl leading-relaxed font-medium" data-testid="text-subtitle">
                 {t('landing.subtitle')}
               </p>
               <a href="/api/login">
                 <Button 
                   size="lg" 
-                  className="h-14 px-8 text-lg gap-2 rounded-xl shadow-lg hover:shadow-xl transition-all font-display font-bold"
+                  variant="secondary"
+                  className="h-16 px-10 text-xl gap-3 shadow-2xl hover:shadow-xl transition-all font-display font-bold border-4 border-white/50 animate-bounce"
                   data-testid="button-cta"
                 >
-                  <Sparkles className="w-5 h-5" />
+                  <Sparkles className="w-6 h-6" />
                   {t('landing.cta')}
                 </Button>
               </a>
             </div>
 
             {/* Hero Image (Right) */}
-            <div className="hidden md:flex items-center justify-center">
+            <div className="hidden md:flex items-center justify-center relative">
               <div className="relative w-full max-w-md aspect-square">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-full blur-3xl" />
+                <div className="absolute inset-0 bg-gradient-to-br from-accent via-primary to-secondary rounded-full blur-3xl opacity-40 animate-pulse" />
                 <div className="relative flex items-center justify-center h-full">
-                  <BookHeart className="w-64 h-64 text-primary/30" strokeWidth={1} />
+                  <BookHeart className="w-64 h-64 text-primary drop-shadow-2xl" strokeWidth={1.5} />
                 </div>
+                {/* Floating decorative elements */}
+                <Sparkles className="absolute top-10 right-10 w-8 h-8 text-accent animate-bounce" style={{animationDelay: '0.2s'}} />
+                <Sparkles className="absolute bottom-20 left-10 w-6 h-6 text-secondary animate-bounce" style={{animationDelay: '0.5s'}} />
+                <Wand2 className="absolute top-1/3 left-0 w-10 h-10 text-primary animate-bounce" style={{animationDelay: '0.8s'}} />
               </div>
             </div>
           </div>
@@ -66,47 +71,50 @@ export default function Landing() {
         </div>
 
         {/* HOW IT WORKS SECTION */}
-        <section className="py-16 md:py-24 bg-background dark:bg-card">
-          <div className="max-w-5xl mx-auto px-4 sm:px-8">
-            <h2 className="font-display text-4xl font-bold text-center mb-4">
+        <section className="py-16 md:py-24 bg-gradient-to-br from-accent/30 via-accent/20 to-accent/30 relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-10 left-10 w-20 h-20 rounded-full bg-primary/20 blur-2xl" />
+          <div className="absolute bottom-10 right-10 w-32 h-32 rounded-full bg-secondary/20 blur-3xl" />
+          <div className="max-w-5xl mx-auto px-4 sm:px-8 relative z-10">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-center mb-4 text-primary">
               {t('landing.howItWorks.title')}
             </h2>
-            <p className="text-center text-muted-foreground mb-12 text-lg">It's as easy as 1-2-3!</p>
+            <p className="text-center text-foreground mb-12 text-xl font-semibold">It's as easy as 1-2-3!</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Step 1 */}
-              <Card className="border-2 rounded-2xl text-center" data-testid="card-step-1">
+              <Card className="border-4 border-primary/30 text-center shadow-2xl hover:scale-105 transition-transform bg-gradient-to-br from-primary/10 to-primary/5" data-testid="card-step-1">
                 <CardHeader>
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <User className="w-8 h-8 text-primary" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                    <User className="w-10 h-10 text-white" strokeWidth={2.5} />
                   </div>
-                  <CardTitle className="font-display">{t('landing.howItWorks.step1Title')}</CardTitle>
+                  <CardTitle className="font-display text-xl">{t('landing.howItWorks.step1Title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{t('landing.howItWorks.step1Desc')}</p>
+                  <p className="text-foreground font-medium">{t('landing.howItWorks.step1Desc')}</p>
                 </CardContent>
               </Card>
               {/* Step 2 */}
-              <Card className="border-2 rounded-2xl text-center" data-testid="card-step-2">
+              <Card className="border-4 border-secondary/30 text-center shadow-2xl hover:scale-105 transition-transform bg-gradient-to-br from-secondary/10 to-secondary/5" data-testid="card-step-2">
                 <CardHeader>
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="w-8 h-8 text-primary" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                    <Sparkles className="w-10 h-10 text-white" strokeWidth={2.5} />
                   </div>
-                  <CardTitle className="font-display">{t('landing.howItWorks.step2Title')}</CardTitle>
+                  <CardTitle className="font-display text-xl">{t('landing.howItWorks.step2Title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{t('landing.howItWorks.step2Desc')}</p>
+                  <p className="text-foreground font-medium">{t('landing.howItWorks.step2Desc')}</p>
                 </CardContent>
               </Card>
               {/* Step 3 */}
-              <Card className="border-2 rounded-2xl text-center" data-testid="card-step-3">
+              <Card className="border-4 border-accent/50 text-center shadow-2xl hover:scale-105 transition-transform bg-gradient-to-br from-accent/20 to-accent/10" data-testid="card-step-3">
                 <CardHeader>
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Mic className="w-8 h-8 text-primary" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-accent to-accent/90 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                    <Mic className="w-10 h-10 text-accent-foreground" strokeWidth={2.5} />
                   </div>
-                  <CardTitle className="font-display">{t('landing.howItWorks.step3Title')}</CardTitle>
+                  <CardTitle className="font-display text-xl">{t('landing.howItWorks.step3Title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{t('landing.howItWorks.step3Desc')}</p>
+                  <p className="text-foreground font-medium">{t('landing.howItWorks.step3Desc')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -114,8 +122,11 @@ export default function Landing() {
         </section>
 
         {/* FEATURE HIGHLIGHTS SECTION */}
-        <section className="py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+        <section className="py-16 md:py-24 bg-gradient-to-br from-secondary/20 via-primary/15 to-secondary/20 relative overflow-hidden">
+          {/* Decorative blobs */}
+          <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-accent/30 blur-3xl" />
+          <div className="absolute bottom-40 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
             {/* Feature 1: Multilingual */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16">
               <div className="flex items-center justify-center">
@@ -152,30 +163,30 @@ export default function Landing() {
         </section>
 
         {/* "COMING SOON" UPSELL TEASER */}
-        <section className="py-16 md:py-24 bg-background dark:bg-card">
+        <section className="py-16 md:py-24 bg-gradient-to-br from-primary/25 via-accent/25 to-primary/25">
           <div className="max-w-5xl mx-auto px-4 sm:px-8 text-center">
-            <h2 className="font-display text-4xl font-bold mb-12">
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-12 text-primary">
               {t('landing.upsell.title')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Upsell 1: Voice Cloning */}
-              <Card className="border-2 rounded-2xl" data-testid="card-upsell-1">
+              <Card className="border-4 border-secondary/30 shadow-2xl hover:scale-105 transition-transform" data-testid="card-upsell-1">
                 <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Mic className="w-8 h-8 text-primary" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                    <Mic className="w-10 h-10 text-white" strokeWidth={2.5} />
                   </div>
-                  <h3 className="text-xl font-display font-semibold mb-2">{t('landing.upsell.voiceTitle')}</h3>
-                  <p className="text-muted-foreground">{t('landing.upsell.voiceDesc')}</p>
+                  <h3 className="text-2xl font-display font-bold mb-2">{t('landing.upsell.voiceTitle')}</h3>
+                  <p className="text-foreground font-medium">{t('landing.upsell.voiceDesc')}</p>
                 </CardContent>
               </Card>
               {/* Upsell 2: Hardcover Books */}
-              <Card className="border-2 rounded-2xl" data-testid="card-upsell-2">
+              <Card className="border-4 border-primary/30 shadow-2xl hover:scale-105 transition-transform" data-testid="card-upsell-2">
                 <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <BookHeart className="w-8 h-8 text-primary" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                    <BookHeart className="w-10 h-10 text-white" strokeWidth={2.5} />
                   </div>
-                  <h3 className="text-xl font-display font-semibold mb-2">{t('landing.upsell.bookTitle')}</h3>
-                  <p className="text-muted-foreground">{t('landing.upsell.bookDesc')}</p>
+                  <h3 className="text-2xl font-display font-bold mb-2">{t('landing.upsell.bookTitle')}</h3>
+                  <p className="text-foreground font-medium">{t('landing.upsell.bookDesc')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -183,82 +194,103 @@ export default function Landing() {
         </section>
 
         {/* PRICING / CREDIT PACKAGES SECTION */}
-        <section className="py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+        <section className="py-16 md:py-24 bg-gradient-to-br from-accent/30 via-secondary/20 to-accent/30 relative overflow-hidden">
+          {/* Decorative sparkles */}
+          <div className="absolute top-10 left-1/4 w-24 h-24 rounded-full bg-primary/20 blur-2xl animate-pulse" />
+          <div className="absolute bottom-10 right-1/4 w-32 h-32 rounded-full bg-secondary/20 blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
             <div className="text-center mb-12">
-              <Badge className="mb-4 font-display text-base px-6 py-2" data-testid="badge-pricing">
+              <Badge variant="secondary" className="mb-4 font-display text-lg px-8 py-3 border-4 border-white/50 shadow-xl" data-testid="badge-pricing">
                 No Subscription! Your credits never expire
               </Badge>
-              <h2 className="font-display text-4xl font-bold mb-4">
+              <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 text-primary">
                 {t('landing.pricing.title')}
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-xl text-foreground max-w-2xl mx-auto font-semibold">
                 {t('landing.pricing.subtitle')}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {CREDIT_PACKAGES.map((pkg, index) => (
-                <Card
-                  key={index}
-                  className={`border-2 relative ${pkg.popular ? 'border-primary shadow-2xl scale-105 bg-gradient-to-br from-primary/5 to-purple-500/5' : 'shadow-lg'} flex flex-col`}
-                  data-testid={`card-package-${index}`}
-                >
-                  {pkg.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <Badge className="gap-1.5 px-4 py-1.5 shadow-lg font-display bg-gradient-to-r from-primary to-purple-600" data-testid="badge-popular">
-                        <Sparkles className="w-3 h-3" />
-                        Best Value
-                      </Badge>
-                    </div>
-                  )}
-                  <CardHeader className="pb-4 pt-8 text-center">
-                    <CardTitle className="font-display text-5xl font-bold mb-2" data-testid={`text-credits-${index}`}>
-                      {pkg.credits} {t('credits.label')}
-                    </CardTitle>
-                    <p className="text-4xl font-bold" data-testid={`text-price-${index}`}>
-                      ${pkg.price}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="flex flex-col flex-1 p-8 space-y-6">
-                    <ul className="space-y-3 flex-1">
-                      <li className="flex items-center gap-2"><Check className="w-5 h-5 text-primary" /><span>{pkg.credits} {t('landing.pricing.stories')}</span></li>
-                      <li className="flex items-center gap-2"><Check className="w-5 h-5 text-primary" /><span>{t('landing.pricing.unlimitedPreviews')}</span></li>
-                      <li className="flex items-center gap-2"><Check className="w-5 h-5 text-primary" /><span>{t('landing.pricing.saveForever')}</span></li>
-                    </ul>
-                    <a href="/api/login" className="w-full">
-                      <Button
-                        className="w-full h-12 gap-2 text-base font-display font-bold"
-                        variant={pkg.popular ? "default" : "outline"}
-                        data-testid={`button-buy-${index}`}
-                      >
-                        {t('landing.pricing.getStarted')}
-                      </Button>
-                    </a>
-                  </CardContent>
-                </Card>
-              ))}
+              {CREDIT_PACKAGES.map((pkg, index) => {
+                const colors = [
+                  { border: 'border-primary/40', bg: 'from-primary/20 to-primary/10', badge: 'from-primary via-primary/90 to-primary/80' },
+                  { border: 'border-secondary/40', bg: 'from-secondary/20 to-secondary/10', badge: 'from-secondary via-secondary/90 to-secondary/80' },
+                  { border: 'border-accent/50', bg: 'from-accent/30 to-accent/15', badge: 'from-accent via-accent/90 to-accent/80' },
+                ];
+                const colorScheme = colors[index % colors.length];
+                
+                return (
+                  <Card
+                    key={index}
+                    className={`border-4 ${colorScheme.border} relative ${pkg.popular ? 'shadow-2xl scale-110 ring-4 ring-primary/20' : 'shadow-xl hover:scale-105'} flex flex-col transition-all bg-gradient-to-br ${colorScheme.bg}`}
+                    data-testid={`card-package-${index}`}
+                  >
+                    {pkg.popular && (
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-10">
+                        <Badge className={`gap-2 px-6 py-2.5 shadow-2xl font-display text-base bg-gradient-to-r ${colorScheme.badge} border-4 border-white/50 animate-pulse`} data-testid="badge-popular">
+                          <Sparkles className="w-5 h-5" />
+                          Best Value
+                        </Badge>
+                      </div>
+                    )}
+                    <CardHeader className="pb-4 pt-10 text-center">
+                      <CardTitle className="font-display text-6xl font-black mb-3 text-primary" data-testid={`text-credits-${index}`}>
+                        {pkg.credits}
+                      </CardTitle>
+                      <p className="text-sm font-semibold text-muted-foreground mb-2">{t('credits.label')}</p>
+                      <p className="text-5xl font-black text-foreground" data-testid={`text-price-${index}`}>
+                        ${pkg.price}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="flex flex-col flex-1 p-8 space-y-6">
+                      <ul className="space-y-4 flex-1">
+                        <li className="flex items-center gap-3 text-base font-semibold"><Check className="w-6 h-6 text-primary" strokeWidth={3} /><span>{pkg.credits} {t('landing.pricing.stories')}</span></li>
+                        <li className="flex items-center gap-3 text-base font-semibold"><Check className="w-6 h-6 text-primary" strokeWidth={3} /><span>{t('landing.pricing.unlimitedPreviews')}</span></li>
+                        <li className="flex items-center gap-3 text-base font-semibold"><Check className="w-6 h-6 text-primary" strokeWidth={3} /><span>{t('landing.pricing.saveForever')}</span></li>
+                      </ul>
+                      <a href="/api/login" className="w-full">
+                        <Button
+                          className="w-full h-14 gap-2 text-lg font-display font-black shadow-xl border-4 border-white/30"
+                          variant={pkg.popular ? "default" : "secondary"}
+                          data-testid={`button-buy-${index}`}
+                        >
+                          <Sparkles className="w-5 h-5" />
+                          {t('landing.pricing.getStarted')}
+                        </Button>
+                      </a>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* FINAL CTA SECTION */}
-        <section className="py-16 md:py-24 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground">
-          <div className="max-w-3xl mx-auto px-4 sm:px-8 text-center">
-            <Gift className="w-16 h-16 mx-auto mb-6" />
-            <h2 className="font-display text-4xl font-bold mb-4">
+        <section className="py-16 md:py-24 bg-gradient-to-br from-primary via-secondary to-accent text-white relative overflow-hidden">
+          {/* Floating decorative elements */}
+          <Sparkles className="absolute top-20 left-20 w-12 h-12 text-white/30 animate-bounce" style={{animationDelay: '0.3s'}} />
+          <BookHeart className="absolute top-40 right-20 w-16 h-16 text-white/20 animate-bounce" style={{animationDelay: '0.7s'}} />
+          <Wand2 className="absolute bottom-20 left-1/3 w-10 h-10 text-white/25 animate-bounce" style={{animationDelay: '1s'}} />
+          <Gift className="absolute bottom-40 right-1/3 w-14 h-14 text-white/20 animate-bounce" style={{animationDelay: '0.5s'}} />
+          
+          <div className="max-w-3xl mx-auto px-4 sm:px-8 text-center relative z-10">
+            <div className="w-24 h-24 mx-auto mb-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border-4 border-white/40 shadow-2xl">
+              <Gift className="w-14 h-14 text-white" strokeWidth={2} />
+            </div>
+            <h2 className="font-display text-4xl md:text-5xl font-black mb-4 drop-shadow-lg">
               {t('landing.finalCta.title')}
             </h2>
-            <p className="text-xl text-primary-foreground/80 mb-8">
+            <p className="text-xl md:text-2xl mb-10 font-semibold drop-shadow-md">
               {t('landing.finalCta.subtitle')}
             </p>
             <a href="/api/login">
               <Button 
                 size="lg" 
-                variant="outline"
-                className="h-14 px-8 text-lg gap-2 rounded-xl shadow-lg hover:shadow-xl transition-all font-display font-bold bg-white text-primary hover:bg-white/90"
+                className="h-16 px-12 text-xl gap-3 shadow-2xl hover:shadow-xl transition-all font-display font-black bg-white text-primary hover:scale-110 border-4 border-white/50"
                 data-testid="button-final-cta"
               >
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-6 h-6" />
                 {t('landing.cta')}
               </Button>
             </a>
