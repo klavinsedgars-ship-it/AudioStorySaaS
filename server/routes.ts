@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { Readable } from "stream";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { z } from "zod";
@@ -231,14 +230,13 @@ Return ONLY the completed, corrected story in ${langName}. Do not add any commen
   return correctedStoryText;
 }
 
-// Stream audio directly from ElevenLabs (more memory efficient)
-async function generateAudioStream(text: string, language: string): Promise<ReadableStream<Uint8Array> | null> {
+async function generateAudioFromText(text: string, language: string): Promise<ArrayBuffer> {
   const voiceId =
     LANGUAGE_OPTIONS.find((l) => l.code === language)?.elevenLabsVoiceId ||
     "21m00Tcm4TlvDq8ikWAM";
 
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
     {
       method: "POST",
       headers: {
@@ -261,20 +259,15 @@ async function generateAudioStream(text: string, language: string): Promise<Read
     throw new Error(`ElevenLabs API error: ${error}`);
   }
 
-  return response.body;
+  return response.arrayBuffer();
 }
 
-// Upload audio stream directly to storage (more memory efficient)
-async function uploadAudioToStorage(audioStream: ReadableStream<Uint8Array>, filename: string): Promise<string> {
+async function uploadAudioToStorage(audioBuffer: ArrayBuffer, filename: string): Promise<string> {
   const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
   const fullPath = `${privateDir}/${filename}`;
   
-  // Convert Web ReadableStream to Node.js Readable stream
-  // This is necessary because @replit/object-storage expects Node.js streams
-  const nodeStream = Readable.fromWeb(audioStream as any);
-  
-  // Use uploadFromStream instead of uploadFromBytes to avoid loading entire file into memory
-  await objectStorageClient.uploadFromStream(fullPath, nodeStream);
+  const buffer = Buffer.from(audioBuffer);
+  await objectStorageClient.uploadFromBytes(fullPath, buffer);
   
   return fullPath;
 }
@@ -363,16 +356,12 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        // Generate audio stream
-        const audioStream = await generateAudioStream(storyText, language);
+        // Generate audio
+        const audioBuffer = await generateAudioFromText(storyText, language);
         
-        if (!audioStream) {
-          throw new Error("No audio stream returned from ElevenLabs");
-        }
-        
-        // Upload stream to storage
+        // Upload to storage
         const filename = `story-${storyId}-${Date.now()}.mp3`;
-        const audioPath = await uploadAudioToStorage(audioStream, filename);
+        const audioPath = await uploadAudioToStorage(audioBuffer, filename);
         
         // Update database
         await storage.updateStoryAudio(storyId, audioPath);
