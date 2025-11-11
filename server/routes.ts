@@ -232,6 +232,9 @@ Return ONLY the completed, corrected story in ${langName}. Do not add any commen
 }
 
 async function generateAudioStream(text: string, language: string) {
+  const startTime = Date.now();
+  console.log(`[AUDIO-STREAM] Starting ElevenLabs API call at ${new Date().toISOString()}`);
+  
   const voiceId =
     LANGUAGE_OPTIONS.find((l) => l.code === language)?.elevenLabsVoiceId ||
     "21m00Tcm4TlvDq8ikWAM";
@@ -260,10 +263,16 @@ async function generateAudioStream(text: string, language: string) {
     throw new Error(`ElevenLabs API error: ${error}`);
   }
 
+  const responseTime = Date.now() - startTime;
+  console.log(`[AUDIO-STREAM] ElevenLabs response received in ${responseTime}ms, stream ready`);
+
   return response.body;
 }
 
 async function uploadStreamToStorage(stream: any, filename: string): Promise<string> {
+  const startTime = Date.now();
+  console.log(`[UPLOAD-STREAM] Starting stream upload at ${new Date().toISOString()}`);
+  
   const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
   const fullPath = `${privateDir}/${filename}`;
   
@@ -271,6 +280,9 @@ async function uploadStreamToStorage(stream: any, filename: string): Promise<str
   const nodeStream = Readable.fromWeb(stream as any);
   
   await objectStorageClient.uploadFromStream(fullPath, nodeStream);
+  
+  const uploadTime = Date.now() - startTime;
+  console.log(`[UPLOAD-STREAM] Stream upload completed in ${uploadTime}ms (${(uploadTime / 1000).toFixed(2)}s)`);
   
   return fullPath;
 }
@@ -359,18 +371,24 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
+        const attemptStartTime = Date.now();
+        
         // Generate audio stream
+        console.log(`[AUDIO] Step 1: Calling ElevenLabs streaming API for story ${storyId}`);
         const audioStream = await generateAudioStream(storyText, language);
         
         // Upload stream to storage
+        console.log(`[AUDIO] Step 2: Uploading audio stream to Object Storage for story ${storyId}`);
         const filename = `story-${storyId}-${Date.now()}.mp3`;
         const audioPath = await uploadStreamToStorage(audioStream, filename);
         
         // Update database
+        console.log(`[AUDIO] Step 3: Updating database for story ${storyId}`);
         await storage.updateStoryAudio(storyId, audioPath);
         await storage.updateStoryStatus(storyId, 'gen_image');
         
-        console.log(`[AUDIO] Successfully generated audio for story ${storyId}`);
+        const totalTime = Date.now() - attemptStartTime;
+        console.log(`[AUDIO] Successfully generated audio for story ${storyId} in ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
         return true;
       } catch (error: any) {
         lastError = error;
