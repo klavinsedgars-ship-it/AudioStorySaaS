@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
-import { Sparkles, Wand2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface MagicalLoadingBarProps {
   status: string;
 }
 
 const messages: Record<string, string> = {
-  gen_audio: "Warming up the narrator's voice...",
-  gen_image: "Painting your magical illustration...",
+  gen_audio: "Generating audio...",
+  gen_image: "Creating illustration...",
   complete: "Your story is ready!",
-  failed: "Oh no! The magic fizzled. Please try again.",
-  generating: "Sprinkling stardust on your story..."
+  failed: "Something went wrong. Please try again.",
+  generating: "Processing your story..."
 };
 
 export function MagicalLoadingBar({ status }: MagicalLoadingBarProps) {
@@ -36,30 +36,24 @@ export function MagicalLoadingBar({ status }: MagicalLoadingBarProps) {
   const isLoading = status === 'gen_audio' || status === 'gen_image' || status === 'generating';
 
   return (
-    <div className="w-full max-w-md mx-auto p-8 space-y-6 text-center" data-testid="magical-loading-bar">
-      <div className="flex justify-center items-center gap-4">
-        <Wand2 className="w-8 h-8 text-primary animate-bounce" />
-        <h3 className="text-xl font-display font-semibold text-primary">
-          {messages[status] || "Creating magic..."}
+    <div className="w-full max-w-md mx-auto p-8 space-y-4 text-center" data-testid="magical-loading-bar">
+      <div className="flex justify-center items-center gap-3">
+        {isLoading && <Loader2 className="w-6 h-6 text-foreground animate-spin" />}
+        <h3 className="text-lg font-medium text-foreground">
+          {messages[status] || "Loading..."}
         </h3>
       </div>
 
-      <div className="relative w-full">
+      <div className="w-full">
         <Progress 
           value={isLoading ? progress : (status === 'complete' ? 100 : 0)} 
-          className="h-4 transition-all duration-1000 ease-linear"
+          className="h-2"
           data-testid="progress-bar"
         />
-        {isLoading && (
-          <Sparkles 
-            className="w-5 h-5 text-yellow-400 absolute -top-1 transition-all duration-1000 ease-linear" 
-            style={{ left: `calc(${progress}% - 10px)` }} 
-          />
-        )}
       </div>
 
       <p className="text-sm text-muted-foreground">
-        {isLoading ? "It usually takes 60-90 seconds to generate." : (status === 'complete' ? "All done!" : "")}
+        {isLoading ? "This usually takes 60-90 seconds." : (status === 'complete' ? "Complete!" : "")}
       </p>
     </div>
   );

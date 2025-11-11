@@ -27,19 +27,14 @@ export function StorybookPreview({
       <CardContent className="p-8 min-h-[500px] flex flex-col">
         {/* Empty State */}
         {!storyText && !isLoading && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
-            <div className="relative">
-              <BookOpen className="w-24 h-24 text-primary/30" strokeWidth={1.5} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 bg-primary/5 rounded-full animate-pulse" />
-              </div>
-            </div>
+          <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+            <BookOpen className="w-16 h-16 text-muted-foreground/40" strokeWidth={1.5} />
             <div className="space-y-2">
-              <h3 className="text-2xl font-display text-muted-foreground">
-                Your story is waiting to be written...
+              <h3 className="text-lg font-medium text-muted-foreground">
+                Your story preview will appear here
               </h3>
               <p className="text-sm text-muted-foreground/70 max-w-sm">
-                Fill in the details on the left and let the magic begin!
+                Fill in the details and generate your story
               </p>
             </div>
           </div>
@@ -48,7 +43,7 @@ export function StorybookPreview({
         {/* Loading State */}
         {isLoading && (
           <div className="flex-1 flex items-center justify-center">
-            <MagicalLoading message="Asking the moon for a story..." />
+            <MagicalLoading message="Generating your story..." />
           </div>
         )}
 
