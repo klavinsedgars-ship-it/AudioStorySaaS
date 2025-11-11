@@ -15,6 +15,7 @@ import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown,
 import { Loader2 } from "lucide-react";
 import { MagicalLoading } from "@/components/MagicalLoading";
 import { StorybookPreview } from "@/components/StorybookPreview";
+import { StoryGenerationPanel } from "@/components/StoryGenerationPanel";
 
 const THEME_ICONS: Record<string, LucideIcon> = {
   "Space Adventure": Rocket,
@@ -48,6 +49,12 @@ export default function Creator() {
   const [storyText, setStoryText] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingAudio, setIsCreatingAudio] = useState(false);
+  
+  // Story generation state machine
+  const [currentStoryId, setCurrentStoryId] = useState<string | null>(null);
+  const [storyStatus, setStoryStatus] = useState<"idle" | "generating" | "complete" | "failed">("idle");
+  const [audioPath, setAudioPath] = useState<string | null>(null);
+  const [imagePath, setImagePath] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -148,6 +155,7 @@ export default function Creator() {
     }
 
     setIsCreatingAudio(true);
+    setStoryStatus("generating");
 
     try {
       const response = await apiRequest("POST", "/api/generate-story-audio", {
@@ -160,17 +168,14 @@ export default function Creator() {
       });
 
       const data = await response.json();
-      const storyId = data.storyId;
+      setCurrentStoryId(data.storyId);
 
       toast({
         title: "Story Started!",
         description: "Creating your magical audio story...",
       });
-
-      setTimeout(() => {
-        window.location.href = `/story/generating/${storyId}`;
-      }, 500);
     } catch (error: any) {
+      setStoryStatus("failed");
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -191,6 +196,68 @@ export default function Creator() {
       setIsCreatingAudio(false);
     }
   };
+  
+  // Poll story status when generating
+  useEffect(() => {
+    if (!currentStoryId || storyStatus !== "generating") return;
+    
+    let pollInterval: NodeJS.Timeout;
+    let pollDelay = 1000; // Start with 1 second
+    const maxDelay = 5000; // Cap at 5 seconds
+    const timeout = 5 * 60 * 1000; // 5 minute timeout
+    const startTime = Date.now();
+    
+    const pollStatus = async () => {
+      try {
+        // Check timeout
+        if (Date.now() - startTime > timeout) {
+          setStoryStatus("failed");
+          toast({
+            title: "Timeout",
+            description: "Story generation took too long. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const response = await apiRequest("GET", `/api/story/status/${currentStoryId}`);
+        const data = await response.json();
+        
+        if (data.status === "complete") {
+          setStoryStatus("complete");
+          setAudioPath(data.audioPath);
+          setImagePath(data.imagePath || data.imageUrl);
+          toast({
+            title: "Story Ready!",
+            description: "Your audio story is ready to listen!",
+          });
+        } else if (data.status === "failed_audio") {
+          setStoryStatus("failed");
+          toast({
+            title: "Generation Failed",
+            description: "Failed to generate audio. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          // Continue polling with exponential backoff
+          pollDelay = Math.min(pollDelay * 1.5, maxDelay);
+          pollInterval = setTimeout(pollStatus, pollDelay);
+        }
+      } catch (error: any) {
+        console.error("Poll error:", error);
+        // Continue polling on errors (network issues, etc.)
+        pollInterval = setTimeout(pollStatus, pollDelay);
+      }
+    };
+    
+    // Start first poll immediately
+    pollStatus();
+    
+    // Cleanup
+    return () => {
+      if (pollInterval) clearTimeout(pollInterval);
+    };
+  }, [currentStoryId, storyStatus, toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-background to-background dark:from-purple-950/20 dark:via-background dark:to-background pt-24 pb-16">
@@ -382,8 +449,8 @@ export default function Creator() {
           heroName={heroName}
         />
 
-        {/* Approval Buttons - Show when story is ready */}
-        {storyText && !isGenerating && (
+        {/* Approval Buttons - Show when story is ready and not generating */}
+        {storyText && !isGenerating && storyStatus === "idle" && (
           <div className="flex gap-3 flex-wrap mt-6">
             <Button
               variant="outline"
@@ -415,6 +482,14 @@ export default function Creator() {
             </Button>
           </div>
         )}
+
+        {/* Story Generation Panel - Show when generating or complete */}
+        <StoryGenerationPanel
+          status={storyStatus}
+          storyId={currentStoryId}
+          audioPath={audioPath}
+          imagePath={imagePath}
+        />
       </div>
 
         </div>

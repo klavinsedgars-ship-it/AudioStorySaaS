@@ -380,13 +380,13 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
         const filename = `story-${storyId}-${Date.now()}.mp3`;
         const audioPath = await uploadAudioToStorage(audioBuffer, filename);
         
-        // Update database
+        // Update database - mark as COMPLETE after audio (don't wait for illustration)
         console.log(`[AUDIO] Step 3: Updating database for story ${storyId}`);
         await storage.updateStoryAudio(storyId, audioPath);
-        await storage.updateStoryStatus(storyId, 'gen_image');
+        await storage.updateStoryStatus(storyId, 'complete');
         
         const totalTime = Date.now() - attemptStartTime;
-        console.log(`[AUDIO] ✅ Successfully generated audio for story ${storyId} in ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
+        console.log(`[AUDIO] ✅ Successfully generated audio for story ${storyId} in ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s) - Story ready for user!`);
         return true;
       } catch (error: any) {
         lastError = error;
@@ -469,11 +469,10 @@ ${storyText.substring(0, 1500)}...`;
         const buffer = Buffer.from(imageBuffer);
         await objectStorageClient.uploadFromBytes(imageFullPath, buffer);
         
-        // Step 5: Update database with image path
+        // Step 5: Update database with image path (story is already marked 'complete' after audio)
         await storage.updateStoryImage(storyId, imageFullPath);
-        await storage.updateStoryStatus(storyId, 'complete');
         
-        console.log(`[IMAGE] Successfully generated image for story ${storyId}`);
+        console.log(`[IMAGE] ✅ Successfully generated illustration for story ${storyId} (background job complete)`);
         return true;
       } catch (error: any) {
         lastError = error;
@@ -485,13 +484,11 @@ ${storyText.substring(0, 1500)}...`;
       }
     }
     
-    // All retries exhausted
-    console.error(`[IMAGE] All retries exhausted for story ${storyId}`);
-    await storage.updateStoryStatus(storyId, 'failed_image');
+    // All retries exhausted - illustration failed but story is still usable
+    console.error(`[IMAGE] All retries exhausted for story ${storyId} - story remains usable without illustration`);
     return false;
   } catch (error: any) {
-    console.error(`[IMAGE] Fatal error for story ${storyId}:`, error);
-    await storage.updateStoryStatus(storyId, 'failed_image');
+    console.error(`[IMAGE] Fatal error for story ${storyId}:`, error, '- story remains usable without illustration');
     return false;
   }
 }

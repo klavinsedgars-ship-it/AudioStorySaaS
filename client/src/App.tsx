@@ -8,7 +8,6 @@ import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Landing from "@/pages/landing";
 import Creator from "@/pages/creator";
-import StoryLoading from "@/pages/story-loading";
 import Bookshelf from "@/pages/bookshelf";
 import BuyCredits from "@/pages/buy-credits";
 import Dashboard from "@/pages/dashboard";
@@ -28,7 +27,6 @@ function Router() {
         ) : (
           <>
             <Route path="/" component={Creator} />
-            <Route path="/story/generating/:storyId" component={StoryLoading} />
             <Route path="/bookshelf" component={Bookshelf} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/admin" component={Admin} />
