@@ -1,6 +1,20 @@
+This plan modifies your background job to stream audio directly from ElevenLabs to your Replit Object Storage. This is much more efficient, as it avoids loading the entire 90-second audio file into your server's memory.
+
+Below is the complete, updated code for server/routes.ts. You can replace the entire contents of your existing server/routes.ts file with this code.
+
+Updated File: server/routes.ts
+I have made three specific changes to this file:
+
+Renamed generateAudioFromText to generateAudioStream, changed the ElevenLabs endpoint to /stream, and made it return a ReadableStream.
+
+Updated uploadAudioToStorage to accept a ReadableStream and use the objectStorageClient.uploadFromStream method.
+
+Updated the main generateAndSaveAudio background job to connect the new stream-based functions.
+
+TypeScript
+
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { Readable } from "stream";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { z } from "zod";
@@ -9,6 +23,9 @@ import { LANGUAGE_OPTIONS, CREDIT_PACKAGES } from "@shared/schema";
 import Stripe from "stripe";
 import { Client } from "@replit/object-storage";
 import OpenAI from "openai";
+
+// Import ReadableStream type for Node.js
+import type { ReadableStream } from "node:stream/web";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -101,7 +118,7 @@ async function generateStoryText(
 **ĢENERĒŠANAS UZDEVUMS:**
 
 ${theme ? `**Tēma:** ${theme}
-**Tavs Uzdevums:** Radi pilnu stāstu ${langName} valodā, balstoties uz varoņiem un šo tēmu.` : `**Lietotāja Vēlme:** ${customPrompt}
+**Tavs Uzdevums:** Radi pilnu stāstu ${langName} valodā, baloties uz varoņiem un šo tēmu.` : `**Lietotāja Vēlme:** ${customPrompt}
 **Tavs Uzdevums:** Izmanto šo kā galveno sižetu, bet Tev joprojām jāievēro visi noteikumi (mierīgs tonis, miegaina struktūra, audio formāts un ${langName}).`}`;
 
     // Latvian Editor Prompt
@@ -132,7 +149,7 @@ Atdod atpakaļ TIKAI un VIENĪGI pabeigto, izlaboto latviešu stāstu. Nepievien
 2.  **Audio Format:** Use short, clear sentences. Use frequent paragraphs as they will become natural pauses for the ElevenLabs TTS engine.
 3.  **Calm Tone:** DO NOT use scary words (monster, horror, scream). The story must be 100% safe and soothing.
 4.  **Uniqueness:** You MUST include this ${randomPlotElement} in the plot.
-5.  **Structure (Mandatory):**
+5.  **Struktūra (Mandatory):**
     * **Yawn:** Begin with a sleepy, peaceful scene.
     * **Gentle Adventure:** Introduce the plot.
     * **Sleepy Resolution:** Resolve the plot gently and close the story. The story MUST end with the hero feeling safe, warm, and very sleepy.
@@ -231,14 +248,14 @@ Return ONLY the completed, corrected story in ${langName}. Do not add any commen
   return correctedStoryText;
 }
 
-// Stream audio directly from ElevenLabs (more memory efficient)
+// --- [MODIFICATION 1: Function renamed and updated to return a stream] ---
 async function generateAudioStream(text: string, language: string): Promise<ReadableStream<Uint8Array> | null> {
   const voiceId =
     LANGUAGE_OPTIONS.find((l) => l.code === language)?.elevenLabsVoiceId ||
     "21m00Tcm4TlvDq8ikWAM";
 
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, // <-- Use the /stream endpoint
     {
       method: "POST",
       headers: {
@@ -261,20 +278,18 @@ async function generateAudioStream(text: string, language: string): Promise<Read
     throw new Error(`ElevenLabs API error: ${error}`);
   }
 
-  return response.body;
+  return response.body; // <-- Return the stream
 }
 
-// Upload audio stream directly to storage (more memory efficient)
+// --- [MODIFICATION 2: Function signature and implementation updated for streaming] ---
 async function uploadAudioToStorage(audioStream: ReadableStream<Uint8Array>, filename: string): Promise<string> {
   const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
   const fullPath = `${privateDir}/${filename}`;
   
-  // Convert Web ReadableStream to Node.js Readable stream
-  // This is necessary because @replit/object-storage expects Node.js streams
-  const nodeStream = Readable.fromWeb(audioStream as any);
-  
-  // Use uploadFromStream instead of uploadFromBytes to avoid loading entire file into memory
-  await objectStorageClient.uploadFromStream(fullPath, nodeStream);
+  // Use uploadFromStream instead of uploadFromBytes
+  await objectStorageClient.uploadFromStream(fullPath, audioStream, {
+    contentType: "audio/mpeg"
+  });
   
   return fullPath;
 }
@@ -350,7 +365,7 @@ async function streamFile(filePath: string, req: any, res: any, isPublic: boolea
   }
 }
 
-// Background job: Generate and save audio (with retry logic)
+// --- [MODIFICATION 3: Background job updated to use new stream functions] ---
 async function generateAndSaveAudio(storyId: string, storyText: string, language: string): Promise<boolean> {
   const maxRetries = 3;
   const retryDelays = [500, 1500, 3000];
@@ -363,22 +378,21 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        // Generate audio stream
+        // 1. Generate audio stream
         const audioStream = await generateAudioStream(storyText, language);
-        
         if (!audioStream) {
-          throw new Error("No audio stream returned from ElevenLabs");
+          throw new Error("Failed to get audio stream from ElevenLabs");
         }
         
-        // Upload stream to storage
+        // 2. Upload stream to storage
         const filename = `story-${storyId}-${Date.now()}.mp3`;
         const audioPath = await uploadAudioToStorage(audioStream, filename);
         
-        // Update database
+        // 3. Update database
         await storage.updateStoryAudio(storyId, audioPath);
         await storage.updateStoryStatus(storyId, 'gen_image');
         
-        console.log(`[AUDIO] Successfully generated audio for story ${storyId}`);
+        console.log(`[AUDIO] Successfully streamed and saved audio for story ${storyId}`);
         return true;
       } catch (error: any) {
         lastError = error;
@@ -402,7 +416,7 @@ async function generateAndSaveAudio(storyId: string, storyText: string, language
 }
 
 // Background job: Generate and save illustration (with retry logic)
-// NOTE: This function should only be called after audio generation succeeds
+// This function remains unchanged as it was already correct
 async function generateAndSaveIllustration(storyId: string, storyText: string, heroName: string): Promise<boolean> {
   const maxRetries = 2;
   const retryDelays = [1000, 3000];
@@ -458,8 +472,15 @@ ${storyText.substring(0, 1500)}...`;
         const imageFilename = `story-${storyId}-illustration.png`;
         const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
         const imageFullPath = `${privateDir}/${imageFilename}`;
+        
+        // Use uploadFromStream for the image as well, converting buffer to stream
+        const { Readable } = await import('stream');
         const buffer = Buffer.from(imageBuffer);
-        await objectStorageClient.uploadFromBytes(imageFullPath, buffer);
+        const stream = Readable.from(buffer);
+        
+        await objectStorageClient.uploadFromStream(imageFullPath, stream as any, {
+          contentType: "image/png"
+        });
         
         // Step 5: Update database with image path
         await storage.updateStoryImage(storyId, imageFullPath);
@@ -487,6 +508,8 @@ ${storyText.substring(0, 1500)}...`;
     return false;
   }
 }
+
+// --- All routes below this line are unchanged ---
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
