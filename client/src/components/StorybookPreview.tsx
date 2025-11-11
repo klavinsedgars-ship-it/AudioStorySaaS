@@ -21,10 +21,16 @@ export function StorybookPreview({
 }: StorybookPreviewProps) {
   return (
     <Card 
-      className="border-2 shadow-2xl overflow-hidden bg-gradient-to-br from-[hsl(38,77%,98%)] to-[hsl(38,60%,96%)] dark:from-[hsl(240,20%,18%)] dark:to-[hsl(240,15%,16%)]"
+      className="border-4 border-primary/30 shadow-2xl overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 dark:from-purple-950/30 dark:to-background relative book-open"
       data-testid="card-storybook-preview"
     >
-      <CardContent className="p-8 min-h-[500px] flex flex-col">
+      {/* Magical corner decorations */}
+      <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-primary/20 rounded-tl-3xl" />
+      <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-primary/20 rounded-tr-3xl" />
+      <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-primary/20 rounded-bl-3xl" />
+      <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-primary/20 rounded-br-3xl" />
+      
+      <CardContent className="p-8 min-h-[500px] flex flex-col relative z-10">
         {/* Empty State */}
         {!storyText && !isLoading && (
           <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
@@ -74,18 +80,26 @@ export function StorybookPreview({
               </div>
             )}
 
-            {/* Audio Player */}
+            {/* Enhanced Audio Player */}
             {audioPath && storyId && (
-              <div className="mb-6 p-4 rounded-2xl bg-primary/5 border">
-                <div className="flex items-center gap-2 mb-2 text-sm font-medium text-primary">
-                  <Music className="w-4 h-4" />
-                  <span>Listen to Your Story</span>
+              <div className="mb-6 p-6 rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary/20 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                    <Music className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <span className="font-display font-bold text-lg text-primary">Listen to Your Story</span>
+                    <p className="text-xs text-muted-foreground">Professional narrator quality</p>
+                  </div>
                 </div>
                 <audio
                   controls
-                  className="w-full"
+                  className="w-full h-12 rounded-xl"
                   src={`/api/audio/${storyId}`}
                   data-testid="audio-player"
+                  style={{
+                    filter: 'hue-rotate(280deg) saturate(1.5)'
+                  }}
                 >
                   Your browser does not support the audio element.
                 </audio>

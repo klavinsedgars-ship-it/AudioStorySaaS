@@ -11,11 +11,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { STORY_THEMES } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown, Palmtree, Snowflake, Zap, Flame, Flower, Bot, Gem, Clock, type LucideIcon } from "lucide-react";
+import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown, Palmtree, Snowflake, Zap, Flame, Flower, Bot, Gem, Clock, Check, type LucideIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { MagicalLoading } from "@/components/MagicalLoading";
 import { StorybookPreview } from "@/components/StorybookPreview";
 import { MagicalLoadingBar } from "@/components/MagicalLoadingBar";
+import { ProgressConstellation } from "@/components/ProgressConstellation";
+import { FloatingBook } from "@/components/FloatingBook";
+import { MagicalSparkles } from "@/components/MagicalSparkles";
+import { Badge } from "@/components/ui/badge";
+
+const THEME_DESCRIPTIONS: Record<string, string> = {
+  "Space Adventure": "Rocket through the cosmos on a thrilling mission among the stars",
+  "Under the Sea": "Dive deep into an underwater kingdom filled with ocean treasures",
+  "Dinosaurs": "Journey back to the age of mighty dinosaurs and ancient discoveries",
+  "Magical Forest": "Wander through enchanted woods where trees whisper secrets",
+  "Farm Friends": "Meet playful animals on a sunny day at the friendly farm",
+  "Pirate Treasure Hunt": "Set sail on the high seas searching for legendary treasure",
+  "Princess Castle": "Rule a magnificent kingdom from a fairy tale castle",
+  "Jungle Safari": "Trek through wild jungles discovering exotic creatures",
+  "Arctic Animals": "Explore the frozen tundra with polar friends",
+  "Superhero Mission": "Save the day with incredible powers and bravery",
+  "Dragon Quest": "Befriend mighty dragons on an epic adventure",
+  "Fairy Garden": "Dance with fairies in a magical blooming wonderland",
+  "Robot Workshop": "Build amazing inventions in a futuristic laboratory",
+  "Ocean Treasure": "Uncover sparkling gems hidden beneath the waves",
+  "Time Travel Adventure": "Journey through history in an incredible time machine",
+};
 
 const THEME_ICONS: Record<string, LucideIcon> = {
   "Space Adventure": Rocket,
@@ -266,19 +288,74 @@ export default function Creator() {
     };
   }, [currentStoryId, storyStatus, toast]);
 
+  // Determine current progress step
+  const getCurrentStep = (): 'hero' | 'theme' | 'story' | 'audio' | 'complete' => {
+    if (storyStatus === 'complete') return 'complete';
+    if (storyStatus === 'generating' || isCreatingAudio) return 'audio';
+    if (storyText) return 'story';
+    if (selectedTheme || customPrompt) return 'theme';
+    return 'hero';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-background to-background dark:from-purple-950/20 dark:via-background dark:to-background pt-24 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50/30 to-blue-50/30 dark:from-purple-950/20 dark:via-background dark:to-background pt-20 pb-16 relative overflow-hidden">
+      {/* Magical floating decorations */}
+      <div className="fixed inset-0 pointer-events-none">
+        <MagicalSparkles count={6} />
+        <div className="absolute top-10 left-5">
+          <FloatingBook delay={0} />
+        </div>
+        <div className="absolute top-32 right-10">
+          <FloatingBook delay={1.5} />
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
+        {/* Progress Constellation */}
+        <ProgressConstellation currentStep={getCurrentStep()} className="mb-8" />
+        
+        {/* Contextual Tip Banner */}
+        {!storyText && (user?.credits || 0) > 0 && (
+          <div className="mb-6 text-center">
+            <Badge variant="secondary" className="text-sm px-6 py-2">
+              💡 Tip: Most parents create 3-5 unique stories per child!
+            </Badge>
+          </div>
+        )}
+
+        {/* Low Credits Warning */}
+        {(user?.credits || 0) < 3 && (user?.credits || 0) > 0 && (
+          <Card className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-300/50">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <p className="text-sm">
+                <strong>Running low on credits!</strong> Save 40% with the Family Pack — perfect for creating more magical moments.
+              </p>
+              <a href="/api/login">
+                <Button variant="default" size="sm">
+                  Get Credits
+                </Button>
+              </a>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Two-column grid for desktop, single column for mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           
           {/* LEFT COLUMN: The Form */}
           <div className="lg:order-1">
-            <Card className="border-2 shadow-xl">
+            <Card className="shadow-2xl relative overflow-hidden">
+              {/* Corner sparkles */}
+              <div className="absolute top-4 right-4 text-yellow-400 twinkle">
+                <Sparkles className="w-6 h-6" />
+              </div>
           <CardHeader className="pb-4">
-            <CardTitle className="font-display text-3xl text-center bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid="text-creator-title">
-              {t('creator.title')}
+            <CardTitle className="font-display text-3xl text-center bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent" data-testid="text-creator-title">
+              ✨ Story Workshop
             </CardTitle>
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              Create a personalized adventure in 3 easy steps
+            </p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -363,10 +440,12 @@ export default function Creator() {
             {generationType === "theme" && (
               <div className="space-y-3">
                 <Label className="text-base font-medium font-display">{t('creator.theme')}</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <p className="text-xs text-muted-foreground mb-4">Choose the magical world for your story</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {STORY_THEMES.map((theme) => {
                     const Icon = THEME_ICONS[theme] || Sparkles;
                     const isSelected = selectedTheme === theme;
+                    const description = THEME_DESCRIPTIONS[theme] || "";
                     return (
                       <Card
                         key={theme}
@@ -380,27 +459,39 @@ export default function Creator() {
                           }
                         }}
                         className={`
-                          cursor-pointer transition-all hover:scale-[1.02] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                          cursor-pointer transition-all duration-200 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                           ${isSelected 
-                            ? 'border-2 border-primary ring-2 ring-primary/20 bg-primary/5' 
-                            : 'border-2 border-transparent hover:border-primary/30'
+                            ? 'border-primary/60 ring-4 ring-primary/20 bg-gradient-to-br from-primary/10 to-accent/10 scale-105 shadow-xl' 
+                            : 'hover:scale-102 hover:shadow-lg hover-elevate'
                           }
                         `}
                         data-testid={`card-theme-${theme.toLowerCase().replace(/\s+/g, '-')}`}
                       >
-                        <CardContent className="p-0 flex flex-col items-center justify-center gap-3 min-h-[100px]">
+                        <CardContent className="p-0 flex items-start gap-4">
                           <div className={`
-                            p-3 rounded-xl transition-colors
+                            p-3 rounded-2xl transition-all duration-200 flex-shrink-0
                             ${isSelected 
-                              ? 'bg-primary text-primary-foreground' 
+                              ? 'bg-gradient-to-br from-primary to-accent text-white shadow-lg' 
                               : 'bg-primary/10 text-primary'
                             }
                           `}>
-                            <Icon className="w-8 h-8" />
+                            <Icon className="w-7 h-7" />
                           </div>
-                          <p className="text-sm font-display font-medium text-center leading-tight">
-                            {t(`themes.${theme}`)}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-display font-bold mb-1">
+                              {t(`themes.${theme}`)}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {description}
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <div className="flex-shrink-0">
+                              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                                <Check className="w-4 h-4" />
+                              </div>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     );
