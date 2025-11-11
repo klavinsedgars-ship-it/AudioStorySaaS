@@ -1,14 +1,24 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { MagicalLoading } from "@/components/MagicalLoading";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Music, Image as ImageIcon } from "lucide-react";
 
 interface StorybookPreviewProps {
   storyText: string | null;
   isLoading: boolean;
   heroName: string;
+  audioPath?: string | null;
+  imagePath?: string | null;
+  storyId?: string | null;
 }
 
-export function StorybookPreview({ storyText, isLoading, heroName }: StorybookPreviewProps) {
+export function StorybookPreview({ 
+  storyText, 
+  isLoading, 
+  heroName,
+  audioPath,
+  imagePath,
+  storyId
+}: StorybookPreviewProps) {
   return (
     <Card 
       className="border-2 shadow-2xl overflow-hidden bg-gradient-to-br from-[hsl(38,77%,98%)] to-[hsl(38,60%,96%)] dark:from-[hsl(240,20%,18%)] dark:to-[hsl(240,15%,16%)]"
@@ -51,6 +61,36 @@ export function StorybookPreview({ storyText, isLoading, heroName }: StorybookPr
                 {heroName ? `${heroName}'s Adventure` : "Your Story"}
               </h2>
             </div>
+
+            {/* Story Illustration */}
+            {imagePath && storyId && (
+              <div className="mb-6 rounded-2xl overflow-hidden border-2 border-primary/10 shadow-lg">
+                <img 
+                  src={`/api/audio/${storyId}?asset=image`}
+                  alt={`${heroName}'s adventure`} 
+                  className="w-full h-auto object-cover"
+                  data-testid="story-illustration"
+                />
+              </div>
+            )}
+
+            {/* Audio Player */}
+            {audioPath && storyId && (
+              <div className="mb-6 p-4 rounded-2xl bg-primary/5 border">
+                <div className="flex items-center gap-2 mb-2 text-sm font-medium text-primary">
+                  <Music className="w-4 h-4" />
+                  <span>Listen to Your Story</span>
+                </div>
+                <audio
+                  controls
+                  className="w-full"
+                  src={`/api/audio/${storyId}`}
+                  data-testid="audio-player"
+                >
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
 
             {/* Book Pages with Spine Effect */}
             <div className="flex-1 relative">
