@@ -317,8 +317,9 @@ export default function Creator() {
         {/* Contextual Tip Banner */}
         {!storyText && (user?.credits || 0) > 0 && (
           <div className="mb-6 text-center">
-            <Badge variant="secondary" className="text-sm px-6 py-2">
-              💡 Tip: Most parents create 3-5 unique stories per child!
+            <Badge variant="secondary" className="text-sm px-6 py-2 gap-2">
+              <Sparkles className="w-4 h-4" />
+              Tip: Most parents create 3-5 unique stories per child!
             </Badge>
           </div>
         )}
@@ -350,10 +351,13 @@ export default function Creator() {
                 <Sparkles className="w-6 h-6" />
               </div>
           <CardHeader className="pb-4">
-            <CardTitle className="font-display text-3xl text-center bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent" data-testid="text-creator-title">
-              ✨ Story Workshop
-            </CardTitle>
-            <p className="text-center text-sm text-muted-foreground mt-2">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Wand2 className="w-8 h-8 text-primary" />
+              <CardTitle className="font-display text-3xl text-center bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent" data-testid="text-creator-title">
+                Story Workshop
+              </CardTitle>
+            </div>
+            <p className="text-center text-sm text-muted-foreground">
               Create a personalized adventure in 3 easy steps
             </p>
           </CardHeader>
