@@ -6,9 +6,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Check, Sparkles, User, Mic, BookHeart, Gift, Wand2, Globe, Moon, Heart, Brain, Star, Shield, MonitorOff, Baby } from "lucide-react";
 import { CREDIT_PACKAGES } from "@shared/schema";
 import { Helmet } from "react-helmet";
-import { ScallopedDivider } from "@/components/ScallopedDivider";
-import { FloatingBook } from "@/components/FloatingBook";
-import { MagicalSparkles } from "@/components/MagicalSparkles";
 
 export default function Landing() {
   const { t } = useTranslation();
@@ -107,43 +104,23 @@ export default function Landing() {
         <meta property="og:type" content="website" />
       </Helmet>
 
-      <div className="min-h-screen relative overflow-hidden">
-        {/* Floating decorations */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 left-10">
-            <FloatingBook delay={0} />
-          </div>
-          <div className="absolute top-40 right-20">
-            <FloatingBook delay={1} />
-          </div>
-          <div className="absolute bottom-40 left-20">
-            <FloatingBook delay={2} />
-          </div>
-        </div>
-
+      <div className="min-h-screen">
         {/* HERO SECTION */}
-        <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden bg-gradient-to-br from-purple-100 via-pink-50 to-blue-50 dark:from-purple-950/40 dark:via-background dark:to-background">
-          <MagicalSparkles count={8} />
+        <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 bg-background border-b">
           
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               {/* Hero Text */}
-              <div className="space-y-8 text-center lg:text-left z-10">
+              <div className="space-y-8 text-center lg:text-left">
                 <div className="inline-block">
-                  <Badge variant="magical" className="mb-4 text-base px-6 py-2">
-                    <Sparkles className="w-4 h-4 mr-2" />
+                  <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5">
                     Join 10,000+ Happy Families
                   </Badge>
                 </div>
                 
-                <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 bg-clip-text text-transparent">
-                    Every Child Deserves to Be
-                  </span>
-                  <br />
-                  <span className="text-primary">
-                    The Hero of Their Own Story
-                  </span>
+                <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight text-foreground">
+                  Every Child Deserves to Be<br />
+                  The Hero of Their Own Story
                 </h1>
 
                 <p className="text-xl md:text-2xl text-foreground/80 leading-relaxed max-w-2xl">
@@ -153,8 +130,7 @@ export default function Landing() {
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   <a href="/api/login">
-                    <Button size="lg" variant="magical" className="group" data-testid="button-hero-cta">
-                      <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    <Button size="lg" data-testid="button-hero-cta">
                       Create Your First Story Free
                     </Button>
                   </a>
@@ -177,17 +153,11 @@ export default function Landing() {
 
               {/* Hero Visual */}
               <div className="relative hidden lg:block">
-                <div className="relative w-full aspect-square max-w-lg mx-auto">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-pink-500/20 to-blue-500/20 rounded-full blur-3xl animate-pulse" />
-                  <div className="relative">
-                    <BookHeart className="w-full h-full text-primary/20 gentle-float" strokeWidth={0.5} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center space-y-4">
-                        <Sparkles className="w-20 h-20 text-primary mx-auto sparkle-effect" />
-                        <p className="text-2xl font-display font-bold text-primary">500,000+</p>
-                        <p className="text-lg text-muted-foreground">Stories Created</p>
-                      </div>
-                    </div>
+                <div className="relative w-full aspect-square max-w-lg mx-auto flex items-center justify-center">
+                  <div className="text-center space-y-4 p-12 border rounded-lg bg-muted/30">
+                    <BookHeart className="w-24 h-24 text-primary mx-auto" />
+                    <p className="text-3xl font-display font-bold">500,000+</p>
+                    <p className="text-lg text-muted-foreground">Stories Created</p>
                   </div>
                 </div>
               </div>
@@ -195,10 +165,8 @@ export default function Landing() {
           </div>
         </section>
 
-        <ScallopedDivider />
-
         {/* VALUE PROPOSITIONS */}
-        <section className="py-20 bg-background">
+        <section className="py-20 bg-muted/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-16">
               <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
@@ -209,15 +177,15 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {valueProps.map((prop, index) => (
-                <Card key={index} className="group hover:scale-105 transition-transform duration-300">
-                  <CardContent className="p-8">
-                    <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <prop.icon className="w-8 h-8 text-primary" />
+                <Card key={index} className="border">
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mb-4">
+                      <prop.icon className="w-6 h-6 text-foreground" />
                     </div>
-                    <h3 className="font-display text-2xl font-bold mb-3">{prop.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{prop.description}</p>
+                    <h3 className="font-semibold text-lg mb-2">{prop.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{prop.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -225,10 +193,8 @@ export default function Landing() {
           </div>
         </section>
 
-        <ScallopedDivider flip />
-
         {/* HOW IT WORKS */}
-        <section className="py-20 bg-gradient-to-br from-primary/5 to-accent/5">
+        <section className="py-20 bg-background border-y">
           <div className="max-w-5xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-16">
               <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
@@ -239,47 +205,45 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="text-center relative overflow-visible">
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-display font-bold text-xl shadow-lg">
-                  1
-                </div>
-                <CardContent className="pt-12 pb-8 px-8">
-                  <User className="w-16 h-16 text-primary mx-auto mb-4" />
-                  <h3 className="font-display text-xl font-bold mb-3">Name Your Hero</h3>
-                  <p className="text-muted-foreground">Enter your child's name and choose their adventure theme</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="text-center border">
+                <CardContent className="pt-8 pb-6 px-6">
+                  <div className="w-10 h-10 bg-foreground text-background rounded-full flex items-center justify-center font-semibold text-lg mx-auto mb-4">
+                    1
+                  </div>
+                  <User className="w-12 h-12 text-foreground mx-auto mb-4" />
+                  <h3 className="font-semibold text-lg mb-2">Name Your Hero</h3>
+                  <p className="text-sm text-muted-foreground">Enter your child's name and choose their adventure theme</p>
                 </CardContent>
               </Card>
 
-              <Card className="text-center relative overflow-visible">
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-display font-bold text-xl shadow-lg">
-                  2
-                </div>
-                <CardContent className="pt-12 pb-8 px-8">
-                  <Wand2 className="w-16 h-16 text-primary mx-auto mb-4" />
-                  <h3 className="font-display text-xl font-bold mb-3">Preview & Approve</h3>
-                  <p className="text-muted-foreground">Read the story for free—only use a credit when you love it!</p>
+              <Card className="text-center border">
+                <CardContent className="pt-8 pb-6 px-6">
+                  <div className="w-10 h-10 bg-foreground text-background rounded-full flex items-center justify-center font-semibold text-lg mx-auto mb-4">
+                    2
+                  </div>
+                  <Wand2 className="w-12 h-12 text-foreground mx-auto mb-4" />
+                  <h3 className="font-semibold text-lg mb-2">Preview & Approve</h3>
+                  <p className="text-sm text-muted-foreground">Read the story for free—only use a credit when you love it!</p>
                 </CardContent>
               </Card>
 
-              <Card className="text-center relative overflow-visible">
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-display font-bold text-xl shadow-lg">
-                  3
-                </div>
-                <CardContent className="pt-12 pb-8 px-8">
-                  <Mic className="w-16 h-16 text-primary mx-auto mb-4" />
-                  <h3 className="font-display text-xl font-bold mb-3">Get Your Story</h3>
-                  <p className="text-muted-foreground">Professional audio + beautiful illustration in 90 seconds</p>
+              <Card className="text-center border">
+                <CardContent className="pt-8 pb-6 px-6">
+                  <div className="w-10 h-10 bg-foreground text-background rounded-full flex items-center justify-center font-semibold text-lg mx-auto mb-4">
+                    3
+                  </div>
+                  <Mic className="w-12 h-12 text-foreground mx-auto mb-4" />
+                  <h3 className="font-semibold text-lg mb-2">Get Your Story</h3>
+                  <p className="text-sm text-muted-foreground">Professional audio + beautiful illustration in 90 seconds</p>
                 </CardContent>
               </Card>
             </div>
           </div>
         </section>
 
-        <ScallopedDivider />
-
         {/* TESTIMONIALS */}
-        <section className="py-20 bg-background">
+        <section className="py-20 bg-muted/30">
           <div className="max-w-6xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-16">
               <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
@@ -312,14 +276,11 @@ export default function Landing() {
           </div>
         </section>
 
-        <ScallopedDivider flip />
-
         {/* PRICING */}
-        <section id="pricing" className="py-20 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-purple-950/20 dark:via-background dark:to-background">
+        <section id="pricing" className="py-20 bg-background border-y">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-16">
-              <Badge variant="magical" className="mb-6 text-lg px-8 py-3">
-                <Gift className="w-5 h-5 mr-2" />
+              <Badge variant="secondary" className="mb-6 text-sm px-6 py-2">
                 Launch Special - No Subscription, Credits Never Expire!
               </Badge>
               <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
@@ -334,13 +295,12 @@ export default function Landing() {
               {CREDIT_PACKAGES.map((pkg, index) => (
                 <Card
                   key={index}
-                  className={`relative flex flex-col ${pkg.popular ? 'border-primary/60 shadow-2xl scale-105 magical-glow' : ''}`}
+                  className={`relative flex flex-col border ${pkg.popular ? 'border-primary' : ''}`}
                   data-testid={`card-package-${index}`}
                 >
                   {pkg.popular && (
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-10">
-                      <Badge variant="magical" className="text-base px-6 py-2 shadow-xl">
-                        <Sparkles className="w-4 h-4 mr-2" />
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                      <Badge className="text-sm px-4 py-1">
                         Most Popular - Save 40%
                       </Badge>
                     </div>
@@ -387,9 +347,8 @@ export default function Landing() {
 
                     <a href="/api/login" className="w-full">
                       <Button
-                        variant={pkg.popular ? "magical" : "default"}
+                        variant={pkg.popular ? "default" : "outline"}
                         className="w-full"
-                        size="lg"
                         data-testid={`button-buy-${index}`}
                       >
                         Get Started
@@ -407,10 +366,8 @@ export default function Landing() {
           </div>
         </section>
 
-        <ScallopedDivider />
-
         {/* FAQ */}
-        <section className="py-20 bg-background">
+        <section className="py-20 bg-muted/30">
           <div className="max-w-4xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-16">
               <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
@@ -436,32 +393,27 @@ export default function Landing() {
           </div>
         </section>
 
-        <ScallopedDivider flip />
-
         {/* FINAL CTA */}
-        <section className="py-24 bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 text-white relative overflow-hidden">
-          <MagicalSparkles count={12} />
+        <section className="py-24 bg-foreground text-background border-t">
           
-          <div className="max-w-4xl mx-auto px-4 sm:px-8 text-center relative z-10">
-            <Wand2 className="w-20 h-20 mx-auto mb-8 gentle-float" />
+          <div className="max-w-4xl mx-auto px-4 sm:px-8 text-center">
             <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
               Ready to Make Bedtime Magical?
             </h2>
-            <p className="text-2xl mb-10 text-white/90 leading-relaxed">
+            <p className="text-xl mb-10 text-background/80 leading-relaxed">
               Join 10,000+ families creating cherished memories, one story at a time
             </p>
             <a href="/api/login">
               <Button 
                 size="lg"
                 variant="secondary"
-                className="text-xl px-12 py-8 h-auto shadow-2xl hover:scale-110 transition-transform"
+                className="text-lg"
                 data-testid="button-final-cta"
               >
-                <Sparkles className="w-6 h-6 mr-3" />
                 Create Your First Story Free
               </Button>
             </a>
-            <p className="text-sm text-white/70 mt-8">
+            <p className="text-sm text-background/60 mt-6">
               No credit card required to start • Unlimited text previews forever
             </p>
           </div>
