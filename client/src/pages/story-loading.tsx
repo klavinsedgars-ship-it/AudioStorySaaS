@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, Music, Image as ImageIcon, CheckCircle, XCircle } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
-type StoryStatus = 'pending' | 'gen_audio' | 'gen_image' | 'complete' | 'failed_audio' | 'failed_image';
+type StoryStatus = 'pending' | 'gen_audio' | 'gen_image' | 'gen_image_partial' | 'complete' | 'failed_audio' | 'failed_image';
 
 interface StoryStatusResponse {
   id: string;
   status: StoryStatus;
   audioPath: string | null;
-  imageUrl: string | null;
+  imageUrls: string[];
 }
 
 export default function StoryLoading() {
@@ -71,10 +71,13 @@ export default function StoryLoading() {
         const data: StoryStatusResponse = await response.json();
         setStatus(data.status);
 
-        if (data.status === 'complete') {
+        if (data.status === 'complete' || data.status === 'gen_image_partial') {
+          const imageCount = Array.isArray(data.imageUrls) ? data.imageUrls.length : 0;
           toast({
             title: "Story Ready!",
-            description: "Your magical story is complete",
+            description: data.status === 'gen_image_partial' 
+              ? `Your story is ready! ${imageCount}/5 images generated.`
+              : "Your magical story is complete",
           });
           setTimeout(() => {
             setLocation("/bookshelf");
@@ -135,7 +138,7 @@ export default function StoryLoading() {
   }
 
   const getStatusStep = () => {
-    if (status === 'complete') return 3;
+    if (status === 'complete' || status === 'gen_image_partial') return 3;
     if (status === 'gen_image' || status === 'failed_image') return 2;
     if (status === 'gen_audio' || status === 'failed_audio') return 1;
     return 0;
@@ -146,7 +149,7 @@ export default function StoryLoading() {
   const steps = [
     { label: "Preparing story", icon: Sparkles, step: 0 },
     { label: "Creating audio narration", icon: Music, step: 1 },
-    { label: "Generating magical illustration", icon: ImageIcon, step: 2 },
+    { label: "Generating magical illustrations (5 images)", icon: ImageIcon, step: 2 },
     { label: "Story complete", icon: CheckCircle, step: 3 },
   ];
 
@@ -184,11 +187,11 @@ export default function StoryLoading() {
             <p className="text-muted-foreground mb-6">
               {status === 'failed_audio' 
                 ? "We couldn't generate the audio for your story. Your credit has been preserved."
-                : "We couldn't generate the illustration for your story, but your audio is ready!"}
+                : "We couldn't generate all the illustrations for your story, but your audio is ready!"}
             </p>
             <div className="flex flex-col gap-3">
               <Button 
-                onClick={() => setLocation("/bookshelf")} 
+                onClick={() => setLocation(status === 'failed_audio' ? '/' : '/bookshelf')} 
                 className="w-full"
                 data-testid="button-view-story"
               >
