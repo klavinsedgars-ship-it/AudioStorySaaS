@@ -15,7 +15,7 @@ import { Plus, X, Sparkles, Wand2, Rocket, Fish, TreePine, Tractor, Ship, Crown,
 import { Loader2 } from "lucide-react";
 import { MagicalLoading } from "@/components/MagicalLoading";
 import { StorybookPreview } from "@/components/StorybookPreview";
-import { StoryGenerationPanel } from "@/components/StoryGenerationPanel";
+import { MagicalLoadingBar } from "@/components/MagicalLoadingBar";
 
 const THEME_ICONS: Record<string, LucideIcon> = {
   "Space Adventure": Rocket,
@@ -441,55 +441,90 @@ export default function Creator() {
         </Button>
       </div>
 
-      {/* RIGHT COLUMN: The Storybook */}
+      {/* RIGHT COLUMN: The Storybook / Loading States */}
       <div className="lg:order-2 lg:sticky lg:top-24 lg:h-fit">
-        <StorybookPreview 
-          storyText={storyText}
-          isLoading={isGenerating}
-          heroName={heroName}
-        />
-
-        {/* Approval Buttons - Show when story is ready and not generating */}
-        {storyText && !isGenerating && storyStatus === "idle" && (
-          <div className="flex gap-3 flex-wrap mt-6">
-            <Button
-              variant="outline"
-              onClick={handleGeneratePreview}
-              disabled={isGenerating}
-              className="flex-1 gap-2"
-              data-testid="button-try-again"
-            >
-              <Wand2 className="w-4 h-4" />
-              {t('creator.tryAgain')}
-            </Button>
-            <Button
-              onClick={handleCreateAudio}
-              disabled={isCreatingAudio}
-              className="flex-1 gap-2"
-              data-testid="button-create-audio"
-            >
-              {isCreatingAudio ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {t('creator.creatingAudio')}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  {t('creator.createAudio')}
-                </>
-              )}
-            </Button>
-          </div>
+        
+        {/* 1. Show text generation loader (typing animation) */}
+        {isGenerating && (
+          <StorybookPreview 
+            storyText={null}
+            isLoading={true}
+            heroName={heroName}
+          />
         )}
 
-        {/* Story Generation Panel - Show when generating or complete */}
-        <StoryGenerationPanel
-          status={storyStatus}
-          storyId={currentStoryId}
-          audioPath={audioPath}
-          imagePath={imagePath}
-        />
+        {/* 2. Show audio/image generation loader (progress bar) */}
+        {!isGenerating && (storyStatus === 'generating' || storyStatus === 'failed') && (
+          <Card className="border-2 shadow-2xl">
+            <CardContent className="p-8 min-h-[500px] flex items-center justify-center">
+              <MagicalLoadingBar status={storyStatus} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 3. Show completed story with audio/image */}
+        {!isGenerating && storyStatus === 'complete' && (
+          <StorybookPreview 
+            storyText={storyText}
+            isLoading={false}
+            heroName={heroName}
+            audioPath={audioPath}
+            imagePath={imagePath}
+            storyId={currentStoryId}
+          />
+        )}
+
+        {/* 4. Show text preview (ready for approval) */}
+        {!isGenerating && storyStatus === 'idle' && storyText && (
+          <>
+            <StorybookPreview 
+              storyText={storyText}
+              isLoading={false}
+              heroName={heroName}
+            />
+            {/* Approval Buttons */}
+            <div className="flex gap-3 flex-wrap mt-6">
+              <Button
+                variant="outline"
+                onClick={handleGeneratePreview}
+                disabled={isGenerating}
+                className="flex-1 gap-2"
+                data-testid="button-try-again"
+              >
+                <Wand2 className="w-4 h-4" />
+                {t('creator.tryAgain')}
+              </Button>
+              <Button
+                onClick={handleCreateAudio}
+                disabled={isCreatingAudio}
+                className="flex-1 gap-2"
+                data-testid="button-create-audio"
+              >
+                {isCreatingAudio ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {t('creator.creatingAudio')}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    {t('creator.createAudio')}
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* 5. Show default empty state */}
+        {!isGenerating && storyStatus === 'idle' && !storyText && (
+          <StorybookPreview 
+            storyText={null}
+            isLoading={false}
+            heroName={heroName}
+          />
+        )}
+
       </div>
 
         </div>

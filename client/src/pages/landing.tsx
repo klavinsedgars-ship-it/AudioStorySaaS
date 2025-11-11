@@ -58,12 +58,20 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Wavy Divider */}
+        <div className="relative h-16">
+          <svg className="absolute bottom-0 w-full h-16 text-background dark:text-card" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path fill="currentColor" fillOpacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,122.7C1248,128,1344,160,1392,176L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+          </svg>
+        </div>
+
         {/* HOW IT WORKS SECTION */}
         <section className="py-16 md:py-24 bg-background dark:bg-card">
           <div className="max-w-5xl mx-auto px-4 sm:px-8">
-            <h2 className="font-display text-4xl font-bold text-center mb-12">
+            <h2 className="font-display text-4xl font-bold text-center mb-4">
               {t('landing.howItWorks.title')}
             </h2>
+            <p className="text-center text-muted-foreground mb-12 text-lg">It's as easy as 1-2-3!</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Step 1 */}
               <Card className="border-2 rounded-2xl text-center" data-testid="card-step-1">
@@ -178,6 +186,9 @@ export default function Landing() {
         <section className="py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-12">
+              <Badge className="mb-4 font-display text-base px-6 py-2" data-testid="badge-pricing">
+                No Subscription! Your credits never expire
+              </Badge>
               <h2 className="font-display text-4xl font-bold mb-4">
                 {t('landing.pricing.title')}
               </h2>
@@ -189,14 +200,14 @@ export default function Landing() {
               {CREDIT_PACKAGES.map((pkg, index) => (
                 <Card
                   key={index}
-                  className={`border-2 rounded-2xl relative ${pkg.popular ? 'border-primary shadow-2xl scale-105' : 'shadow-lg'} flex flex-col`}
+                  className={`border-2 relative ${pkg.popular ? 'border-primary shadow-2xl scale-105 bg-gradient-to-br from-primary/5 to-purple-500/5' : 'shadow-lg'} flex flex-col`}
                   data-testid={`card-package-${index}`}
                 >
                   {pkg.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <Badge className="gap-1.5 px-4 py-1.5 shadow-lg font-display" data-testid="badge-popular">
+                      <Badge className="gap-1.5 px-4 py-1.5 shadow-lg font-display bg-gradient-to-r from-primary to-purple-600" data-testid="badge-popular">
                         <Sparkles className="w-3 h-3" />
-                        {t('credits.popular')}
+                        Best Value
                       </Badge>
                     </div>
                   )}
