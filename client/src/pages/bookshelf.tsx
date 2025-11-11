@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, BookOpen, Music, Star, Share2, Copy, Check, Clock, AlertCircle } from "lucide-react";
+import { ProgressiveImageCarousel } from "@/components/ProgressiveImageCarousel";
 import type { Story } from "@shared/schema";
 import { LANGUAGE_OPTIONS } from "@shared/schema";
 import { format } from "date-fns";
@@ -113,9 +114,10 @@ export default function Bookshelf() {
     const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
       'pending': { label: 'Preparing...', variant: 'secondary' },
       'gen_audio': { label: 'Creating Audio...', variant: 'default' },
-      'gen_image': { label: 'Generating Image...', variant: 'default' },
+      'gen_image': { label: 'Generating Images...', variant: 'default' },
+      'gen_image_partial': { label: 'Partial Success', variant: 'secondary' },
       'failed_audio': { label: 'Audio Failed', variant: 'destructive' },
-      'failed_image': { label: 'Image Failed', variant: 'destructive' },
+      'failed_image': { label: 'Images Failed', variant: 'destructive' },
     };
     
     return statusMap[status] || null;
@@ -180,13 +182,12 @@ export default function Bookshelf() {
               
               return (
               <Card key={story.id} className="border-2 hover-elevate transition-all overflow-hidden" data-testid={`card-story-${story.id}`}>
-                {story.imageUrl && (
-                  <div className="relative w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900">
-                    <img
-                      src={`/api/audio/${story.id}?asset=image`}
-                      alt={`${story.heroName}'s story illustration`}
-                      className="w-full h-full object-cover"
-                      data-testid={`img-story-${story.id}`}
+                {story.imageUrls && story.imageUrls.length > 0 && (
+                  <div className="relative w-full aspect-video">
+                    <ProgressiveImageCarousel
+                      storyId={story.id}
+                      imageUrls={story.imageUrls}
+                      status={story.status || null}
                     />
                   </div>
                 )}
