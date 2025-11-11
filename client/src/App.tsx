@@ -13,6 +13,7 @@ import BuyCredits from "@/pages/buy-credits";
 import Dashboard from "@/pages/dashboard";
 import Admin from "@/pages/admin";
 import SharedStory from "@/pages/shared-story";
+import StoryLoading from "@/pages/story-loading";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/admin" component={Admin} />
             <Route path="/buy-credits" component={BuyCredits} />
+            <Route path="/story/generating/:storyId" component={StoryLoading} />
           </>
         )}
         <Route path="/shared/:token" component={SharedStory} />
