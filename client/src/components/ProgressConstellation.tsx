@@ -18,7 +18,7 @@ export function ProgressConstellation({ currentStep, className }: ProgressConste
   const currentIndex = steps.findIndex(s => s.id === currentStep);
 
   return (
-    <div className={cn("relative py-8", className)}>
+    <div className={cn("relative py-6", className)}>
       <div className="flex items-center justify-between max-w-2xl mx-auto px-4">
         {steps.map((step, index) => {
           const Icon = step.icon;
@@ -32,41 +32,36 @@ export function ProgressConstellation({ currentStep, className }: ProgressConste
               {index < steps.length - 1 && (
                 <div 
                   className={cn(
-                    "absolute left-1/2 top-6 h-0.5 w-full z-0",
-                    isComplete ? "bg-primary" : "bg-primary/20"
+                    "absolute left-1/2 top-5 h-0.5 w-full z-0",
+                    isComplete ? "bg-foreground" : "bg-border"
                   )}
-                  style={{
-                    background: isComplete 
-                      ? 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))' 
-                      : undefined
-                  }}
                 />
               )}
 
-              {/* Star/Circle */}
+              {/* Circle */}
               <div 
                 className={cn(
-                  "relative z-10 rounded-full flex items-center justify-center mb-3 transition-all duration-300",
-                  isComplete && "w-12 h-12 bg-primary text-primary-foreground shadow-lg",
-                  isCurrent && "w-14 h-14 bg-gradient-to-br from-primary to-accent text-white shadow-xl twinkle magical-glow",
-                  isUpcoming && "w-10 h-10 bg-background border-2 border-primary/30 text-muted-foreground"
+                  "relative z-10 rounded-full flex items-center justify-center mb-2 transition-all",
+                  isComplete && "w-10 h-10 bg-foreground text-background",
+                  isCurrent && "w-11 h-11 bg-foreground text-background border-2 border-foreground",
+                  isUpcoming && "w-9 h-9 bg-background border-2 border-border text-muted-foreground"
                 )}
               >
                 {isComplete ? (
-                  <Check className="w-6 h-6" />
+                  <Check className="w-5 h-5" />
                 ) : (
                   <Icon className={cn(
                     "transition-all",
-                    isCurrent && "w-7 h-7",
-                    isUpcoming && "w-5 h-5"
+                    isCurrent && "w-5 h-5",
+                    isUpcoming && "w-4 h-4"
                   )} />
                 )}
               </div>
 
               {/* Label */}
               <p className={cn(
-                "text-xs text-center font-display transition-all",
-                isCurrent && "font-bold text-primary scale-110",
+                "text-xs text-center font-medium transition-all",
+                isCurrent && "font-semibold text-foreground",
                 isComplete && "text-foreground",
                 isUpcoming && "text-muted-foreground"
               )}>

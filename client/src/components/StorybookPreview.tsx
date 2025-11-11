@@ -21,16 +21,10 @@ export function StorybookPreview({
 }: StorybookPreviewProps) {
   return (
     <Card 
-      className="border-4 border-primary/30 shadow-2xl overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 dark:from-purple-950/30 dark:to-background relative book-open"
+      className="border overflow-hidden bg-card"
       data-testid="card-storybook-preview"
     >
-      {/* Magical corner decorations */}
-      <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-primary/20 rounded-tl-3xl" />
-      <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-primary/20 rounded-tr-3xl" />
-      <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-primary/20 rounded-bl-3xl" />
-      <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-primary/20 rounded-br-3xl" />
-      
-      <CardContent className="p-8 min-h-[500px] flex flex-col relative z-10">
+      <CardContent className="p-8 min-h-[500px] flex flex-col">
         {/* Empty State */}
         {!storyText && !isLoading && (
           <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
@@ -61,16 +55,16 @@ export function StorybookPreview({
         {/* Success State - The Book */}
         {storyText && !isLoading && (
           <div className="flex-1 flex flex-col">
-            {/* Book Header */}
-            <div className="mb-6 pb-4 border-b-2 border-primary/20">
-              <h2 className="text-3xl font-display text-primary text-center">
+            {/* Header */}
+            <div className="mb-6 pb-4 border-b">
+              <h2 className="text-2xl font-semibold text-foreground text-center">
                 {heroName ? `${heroName}'s Adventure` : "Your Story"}
               </h2>
             </div>
 
             {/* Story Illustration */}
             {imagePath && storyId && (
-              <div className="mb-6 rounded-2xl overflow-hidden border-2 border-primary/10 shadow-lg">
+              <div className="mb-6 rounded-lg overflow-hidden border">
                 <img 
                   src={`/api/audio/${storyId}?asset=image`}
                   alt={`${heroName}'s adventure`} 
@@ -80,58 +74,38 @@ export function StorybookPreview({
               </div>
             )}
 
-            {/* Enhanced Audio Player */}
+            {/* Audio Player */}
             {audioPath && storyId && (
-              <div className="mb-6 p-6 rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary/20 shadow-lg">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                    <Music className="w-6 h-6 text-primary" />
+              <div className="mb-6 p-4 rounded-lg bg-muted border">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-background rounded-full flex items-center justify-center">
+                    <Music className="w-5 h-5 text-foreground" />
                   </div>
                   <div>
-                    <span className="font-display font-bold text-lg text-primary">Listen to Your Story</span>
+                    <span className="font-semibold text-sm">Listen to Your Story</span>
                     <p className="text-xs text-muted-foreground">Professional narrator quality</p>
                   </div>
                 </div>
                 <audio
                   controls
-                  className="w-full h-12 rounded-xl"
+                  className="w-full"
                   src={`/api/audio/${storyId}`}
                   data-testid="audio-player"
-                  style={{
-                    filter: 'hue-rotate(280deg) saturate(1.5)'
-                  }}
                 >
                   Your browser does not support the audio element.
                 </audio>
               </div>
             )}
 
-            {/* Book Pages with Spine Effect */}
-            <div className="flex-1 relative">
-              {/* Subtle spine shadow in the middle */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-primary/10 to-transparent transform -translate-x-1/2 pointer-events-none" />
-              
-              {/* Story Content */}
-              <div className="max-h-[600px] overflow-y-auto pr-4 scroll-smooth">
+            {/* Story Content */}
+            <div className="flex-1">
+              <div className="max-h-[600px] overflow-y-auto">
                 <p 
-                  className="text-lg leading-loose whitespace-pre-wrap font-serif text-foreground/90"
+                  className="text-base leading-relaxed whitespace-pre-wrap text-foreground"
                   data-testid="text-story-preview"
-                  style={{
-                    textIndent: "2em",
-                    lineHeight: "2",
-                  }}
                 >
                   {storyText}
                 </p>
-              </div>
-            </div>
-
-            {/* Decorative footer */}
-            <div className="mt-6 pt-4 border-t border-primary/10 flex justify-center">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
-                <div className="w-2 h-2 rounded-full bg-primary/20" />
-                <div className="w-2 h-2 rounded-full bg-primary/20" />
-                <div className="w-2 h-2 rounded-full bg-primary/20" />
               </div>
             </div>
           </div>

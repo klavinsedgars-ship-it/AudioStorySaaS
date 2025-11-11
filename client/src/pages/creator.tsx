@@ -17,8 +17,6 @@ import { MagicalLoading } from "@/components/MagicalLoading";
 import { StorybookPreview } from "@/components/StorybookPreview";
 import { MagicalLoadingBar } from "@/components/MagicalLoadingBar";
 import { ProgressConstellation } from "@/components/ProgressConstellation";
-import { FloatingBook } from "@/components/FloatingBook";
-import { MagicalSparkles } from "@/components/MagicalSparkles";
 import { Badge } from "@/components/ui/badge";
 
 const THEME_DESCRIPTIONS: Record<string, string> = {
@@ -298,19 +296,8 @@ export default function Creator() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50/30 to-blue-50/30 dark:from-purple-950/20 dark:via-background dark:to-background pt-20 pb-16 relative overflow-hidden">
-      {/* Magical floating decorations */}
-      <div className="fixed inset-0 pointer-events-none">
-        <MagicalSparkles count={6} />
-        <div className="absolute top-10 left-5">
-          <FloatingBook delay={0} />
-        </div>
-        <div className="absolute top-32 right-10">
-          <FloatingBook delay={1.5} />
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
+    <div className="min-h-screen bg-background pt-20 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8">
         {/* Progress Constellation */}
         <ProgressConstellation currentStep={getCurrentStep()} className="mb-8" />
         
@@ -326,7 +313,7 @@ export default function Creator() {
 
         {/* Low Credits Warning */}
         {(user?.credits || 0) < 3 && (user?.credits || 0) > 0 && (
-          <Card className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-300/50">
+          <Card className="mb-6 bg-muted border">
             <CardContent className="p-4 flex items-center justify-between gap-4">
               <p className="text-sm">
                 <strong>Running low on credits!</strong> Save 40% with the Family Pack — perfect for creating more magical moments.
@@ -345,19 +332,12 @@ export default function Creator() {
           
           {/* LEFT COLUMN: The Form */}
           <div className="lg:order-1">
-            <Card className="shadow-2xl relative overflow-hidden">
-              {/* Corner sparkles */}
-              <div className="absolute top-4 right-4 text-yellow-400 twinkle">
-                <Sparkles className="w-6 h-6" />
-              </div>
+            <Card className="border">
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Wand2 className="w-8 h-8 text-primary" />
-              <CardTitle className="font-display text-3xl text-center bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent" data-testid="text-creator-title">
-                Story Workshop
-              </CardTitle>
-            </div>
-            <p className="text-center text-sm text-muted-foreground">
+            <CardTitle className="text-2xl font-semibold text-center" data-testid="text-creator-title">
+              Story Workshop
+            </CardTitle>
+            <p className="text-center text-sm text-muted-foreground mt-2">
               Create a personalized adventure in 3 easy steps
             </p>
           </CardHeader>
@@ -443,9 +423,9 @@ export default function Creator() {
 
             {generationType === "theme" && (
               <div className="space-y-3">
-                <Label className="text-base font-medium font-display">{t('creator.theme')}</Label>
-                <p className="text-xs text-muted-foreground mb-4">Choose the magical world for your story</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Label className="text-base font-medium">{t('creator.theme')}</Label>
+                <p className="text-xs text-muted-foreground mb-4">Choose your story theme</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {STORY_THEMES.map((theme) => {
                     const Icon = THEME_ICONS[theme] || Sparkles;
                     const isSelected = selectedTheme === theme;
@@ -463,26 +443,26 @@ export default function Creator() {
                           }
                         }}
                         className={`
-                          cursor-pointer transition-all duration-200 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                          cursor-pointer transition-all p-3 border
                           ${isSelected 
-                            ? 'border-primary/60 ring-4 ring-primary/20 bg-gradient-to-br from-primary/10 to-accent/10 scale-105 shadow-xl' 
-                            : 'hover:scale-102 hover:shadow-lg hover-elevate'
+                            ? 'border-foreground bg-muted' 
+                            : 'hover-elevate'
                           }
                         `}
                         data-testid={`card-theme-${theme.toLowerCase().replace(/\s+/g, '-')}`}
                       >
-                        <CardContent className="p-0 flex items-start gap-4">
+                        <CardContent className="p-0 flex items-start gap-3">
                           <div className={`
-                            p-3 rounded-2xl transition-all duration-200 flex-shrink-0
+                            p-2 rounded-lg flex-shrink-0
                             ${isSelected 
-                              ? 'bg-gradient-to-br from-primary to-accent text-white shadow-lg' 
-                              : 'bg-primary/10 text-primary'
+                              ? 'bg-foreground text-background' 
+                              : 'bg-muted text-foreground'
                             }
                           `}>
-                            <Icon className="w-7 h-7" />
+                            <Icon className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-display font-bold mb-1">
+                            <p className="text-sm font-semibold mb-1">
                               {t(`themes.${theme}`)}
                             </p>
                             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -491,9 +471,7 @@ export default function Creator() {
                           </div>
                           {isSelected && (
                             <div className="flex-shrink-0">
-                              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                                <Check className="w-4 h-4" />
-                              </div>
+                              <Check className="w-5 h-5" />
                             </div>
                           )}
                         </CardContent>
@@ -557,7 +535,7 @@ export default function Creator() {
 
         {/* 2. Show audio/image generation loader (progress bar) */}
         {!isGenerating && (storyStatus === 'generating' || storyStatus === 'failed') && (
-          <Card className="border-2 shadow-2xl">
+          <Card className="border">
             <CardContent className="p-8 min-h-[500px] flex items-center justify-center">
               <MagicalLoadingBar status={storyStatus} />
             </CardContent>
