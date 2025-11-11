@@ -111,32 +111,41 @@ Preferred communication style: Simple, everyday language.
 - MP3 format audio files stored in Replit Object Storage
 - HTTP range request support for streaming and seeking
 
-**Illustration Generation**:
-- OpenAI DALL-E 3 for story illustrations
-- Two-step process: gpt-4o-mini creates concise art prompt, then DALL-E 3 generates 1024x1024 PNG image
-- Images stored in Replit Object Storage alongside audio files
-- Served via `/api/audio/:storyId?asset=image` endpoint
+**Illustration Generation** (5 Images Per Story):
+- **Phase 1 - Scene Prompt Generation**: Single GPT-4o-mini call (temp 0.5) generates 5 diverse scene prompts as JSON array
+  - Each prompt describes a distinct key moment from the story
+  - Fallback prompts generated if JSON parsing fails
+  - Ensures exactly 5 prompts with padding if necessary
+- **Phase 2 - Sequential Image Generation**: DALL-E 3 generates 5 images (1024x1024 PNG) sequentially to respect rate limits
+  - Deterministic naming: `story-{id}-image-{0-4}.png`
+  - Per-image retry logic: 2 attempts with exponential backoff (1000ms, 3000ms)
+  - Progressive database updates: Each successful image appended to `imageUrls` array via `array_append`
+  - Partial success supported: Story marked complete if at least 1 image succeeds
+- **Storage**: All images stored in Replit Object Storage alongside audio files
+- **Serving**: `/api/audio/:storyId?asset=image&index=N` endpoint serves individual images with bounds checking
 
 ### Async Generation Pipeline
 
 **Architecture**: Fire-and-forget in-process background jobs with sequential execution pattern
 
-**Status Flow**:
+**Status Flow** (Updated for 5-Image Generation):
 - Initial: `pending` (story created, credit deducted, background jobs launched)
 - Audio Phase: `gen_audio` (audio generation in progress)
-- Illustration Phase: `gen_image` (audio complete, illustration in progress)
-- Success: `complete` (both audio and illustration complete)
-- Failure States: `failed_audio` (audio failed, illustration skipped), `failed_image` (audio succeeded, illustration failed)
+- Illustration Phase: `gen_image` (audio complete, 5-image generation in progress)
+- Partial Success: `gen_image_partial` (1-4 images generated, some failed)
+- Full Success: `complete` (audio + all 5 images complete)
+- Failure States: `failed_audio` (audio failed, illustration skipped), `failed_image` (audio succeeded, zero images generated)
 
 **Sequential Execution**:
-- Background jobs run sequentially: audio first, then illustration
-- Illustration only starts if audio succeeds
-- Both jobs return boolean success indicators
-- Status transitions are deterministic and preserve failure states
+- Background jobs run sequentially: audio first, then 5 illustrations
+- Illustrations only start if audio succeeds
+- Each image generation tracked independently with retry logic
+- Status transitions based on success count: 5/5 → complete, 1-4/5 → gen_image_partial, 0/5 → failed_image
 
 **Retry Logic**:
 - Audio: 3 attempts with exponential backoff (500ms, 1500ms, 3000ms)
-- Illustration: 2 attempts with exponential backoff (1000ms, 3000ms)
+- Illustrations: 2 attempts per image with exponential backoff (1000ms, 3000ms)
+- Partial failures preserved: Successful images saved even if some fail
 
 **Frontend Integration**:
 - Creator redirects to StoryLoading page immediately after story creation

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -48,6 +48,15 @@ export default function Creator() {
   const [storyText, setStoryText] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingAudio, setIsCreatingAudio] = useState(false);
+  
+  // New states for real-time generation tracking
+  const [generatingStoryId, setGeneratingStoryId] = useState<string | null>(null);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
+  const [audioPath, setAudioPath] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  
+  // Ref to track active storyId for race condition protection
+  const activeStoryIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -61,6 +70,88 @@ export default function Creator() {
       }, 500);
     }
   }, [isAuthenticated, authLoading, toast, t]);
+
+  // Update ref whenever generatingStoryId changes
+  useEffect(() => {
+    activeStoryIdRef.current = generatingStoryId;
+  }, [generatingStoryId]);
+
+  // Polling effect for real-time generation updates
+  useEffect(() => {
+    if (!generatingStoryId) return;
+
+    let pollInterval: NodeJS.Timeout;
+    const startTime = Date.now();
+    const MAX_POLL_TIME = 5 * 60 * 1000; // 5 minutes
+    const currentStoryId = generatingStoryId; // Capture for closure
+
+    const pollStatus = async () => {
+      try {
+        // Guard against race condition: bail if this story is no longer active
+        if (activeStoryIdRef.current !== currentStoryId) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        // Check if we've been polling for too long
+        if (Date.now() - startTime > MAX_POLL_TIME) {
+          clearInterval(pollInterval);
+          toast({
+            title: "Generation Timeout",
+            description: "Story generation is taking longer than expected. Please check your bookshelf in a few minutes.",
+            variant: "destructive",
+          });
+          setIsCreatingAudio(false);
+          return;
+        }
+
+        const response = await fetch(`/api/story/status/${currentStoryId}`);
+        if (!response.ok) throw new Error("Failed to fetch status");
+        
+        const data = await response.json();
+        
+        // Double-check race condition before updating state
+        if (activeStoryIdRef.current !== currentStoryId) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        setGenerationStatus(data.status);
+        setAudioPath(data.audioPath || null);
+        setImageUrls(data.imageUrls || []);
+
+        // Stop polling if generation is complete or failed
+        if (data.status === 'complete' || data.status === 'gen_image_partial' || data.status === 'failed_audio' || data.status === 'failed_image') {
+          clearInterval(pollInterval);
+          setIsCreatingAudio(false);
+          
+          if (data.status === 'complete' || data.status === 'gen_image_partial') {
+            toast({
+              title: "Story Complete!",
+              description: `Your magical story is ready! ${data.imageUrls?.length || 0}/5 images generated.`,
+            });
+          } else {
+            toast({
+              title: "Generation Issue",
+              description: data.status === 'failed_audio' ? "Audio generation failed" : "Some images failed to generate",
+              variant: "destructive",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+      }
+    };
+
+    // Start polling immediately, then every 2.5 seconds
+    pollStatus();
+    pollInterval = setInterval(pollStatus, 2500);
+
+    // Cleanup
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [generatingStoryId, toast]);
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -100,6 +191,13 @@ export default function Creator() {
 
     setIsGenerating(true);
     setStoryText(null);
+    
+    // Clear previous generation state to avoid state pollution
+    setIsCreatingAudio(false);
+    setGeneratingStoryId(null);
+    setGenerationStatus(null);
+    setAudioPath(null);
+    setImageUrls([]);
 
     try {
       const response = await apiRequest("POST", "/api/generate-story-text", {
@@ -149,6 +247,10 @@ export default function Creator() {
 
     setIsCreatingAudio(true);
 
+    // Clear previous audio/image data before starting new generation
+    setAudioPath(null);
+    setImageUrls([]);
+
     try {
       const response = await apiRequest("POST", "/api/generate-story-audio", {
         storyText,
@@ -162,14 +264,14 @@ export default function Creator() {
       const data = await response.json();
       const storyId = data.storyId;
 
+      // Start real-time polling instead of redirecting
+      setGeneratingStoryId(storyId);
+      setGenerationStatus('pending');
+
       toast({
         title: "Story Started!",
-        description: "Creating your magical audio story...",
+        description: "Creating your magical audio story... Watch the magic happen below!",
       });
-
-      setTimeout(() => {
-        window.location.href = `/story/generating/${storyId}`;
-      }, 500);
     } catch (error: any) {
       if (isUnauthorizedError(error)) {
         toast({
@@ -187,7 +289,6 @@ export default function Creator() {
         description: error.message || t('errors.audioFailed'),
         variant: "destructive",
       });
-    } finally {
       setIsCreatingAudio(false);
     }
   };
@@ -380,6 +481,11 @@ export default function Creator() {
           storyText={storyText}
           isLoading={isGenerating}
           heroName={heroName}
+          storyId={generatingStoryId}
+          status={generationStatus}
+          audioPath={audioPath}
+          imageUrls={imageUrls}
+          isPolling={isCreatingAudio}
         />
 
         {/* Approval Buttons - Show when story is ready */}
