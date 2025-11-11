@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, BookOpen, Music, Star, Share2, Copy, Check } from "lucide-react";
+import { Loader2, BookOpen, Music, Star, Share2, Copy, Check, Clock, AlertCircle } from "lucide-react";
 import type { Story } from "@shared/schema";
 import { LANGUAGE_OPTIONS } from "@shared/schema";
 import { format } from "date-fns";
@@ -107,6 +107,20 @@ export default function Bookshelf() {
     return LANGUAGE_OPTIONS.find(l => l.code === code)?.name || code;
   };
 
+  const getStatusDisplay = (status: string | undefined) => {
+    if (!status || status === 'complete') return null;
+    
+    const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
+      'pending': { label: 'Preparing...', variant: 'secondary' },
+      'gen_audio': { label: 'Creating Audio...', variant: 'default' },
+      'gen_image': { label: 'Generating Image...', variant: 'default' },
+      'failed_audio': { label: 'Audio Failed', variant: 'destructive' },
+      'failed_image': { label: 'Image Failed', variant: 'destructive' },
+    };
+    
+    return statusMap[status] || null;
+  };
+
   const sortedStories = stories ? [...stories].sort((a, b) => {
     if (sortBy === "date") {
       return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
@@ -160,8 +174,22 @@ export default function Bookshelf() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedStories.map((story) => (
+            {sortedStories.map((story) => {
+              const statusDisplay = getStatusDisplay(story.status);
+              const isGenerating = statusDisplay && statusDisplay.variant !== 'destructive';
+              
+              return (
               <Card key={story.id} className="border-2 hover-elevate transition-all overflow-hidden" data-testid={`card-story-${story.id}`}>
+                {story.imageUrl && (
+                  <div className="relative w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900">
+                    <img
+                      src={`/api/audio/${story.id}?asset=image`}
+                      alt={`${story.heroName}'s story illustration`}
+                      className="w-full h-full object-cover"
+                      data-testid={`img-story-${story.id}`}
+                    />
+                  </div>
+                )}
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
@@ -180,9 +208,18 @@ export default function Bookshelf() {
                         </CardTitle>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="shrink-0" data-testid={`badge-language-${story.id}`}>
-                      {getLangName(story.language)}
-                    </Badge>
+                    <div className="flex flex-col gap-2 items-end">
+                      <Badge variant="secondary" className="shrink-0" data-testid={`badge-language-${story.id}`}>
+                        {getLangName(story.language)}
+                      </Badge>
+                      {statusDisplay && (
+                        <Badge variant={statusDisplay.variant} className="shrink-0" data-testid={`badge-status-${story.id}`}>
+                          {isGenerating && <Clock className="w-3 h-3 mr-1 animate-spin" />}
+                          {statusDisplay.variant === 'destructive' && <AlertCircle className="w-3 h-3 mr-1" />}
+                          {statusDisplay.label}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground" data-testid={`text-story-date-${story.id}`}>
                     {story.createdAt && format(new Date(story.createdAt), 'MMM d, yyyy')}
@@ -253,7 +290,8 @@ export default function Bookshelf() {
                   )}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
 
