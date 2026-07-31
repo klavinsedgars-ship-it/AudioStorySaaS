@@ -48,8 +48,11 @@ DATABASE_URL="<your Neon pooled URL>" npm run db:push
 
 1. Push this repo to GitHub (see Step 6 if not done).
 2. <https://vercel.com> → **Add New… → Project** → import your GitHub repo.
-3. **Important — set the Root Directory** to `auction-tracker` (Vercel → project
-   settings → General → Root Directory). This repo keeps the app in a subfolder.
+3. **Root Directory:**
+   - If this is the **standalone `auction-tracker` repo** → leave it as the
+     default (repo root).
+   - If the app lives in a **subfolder** of a larger repo → set Root Directory
+     to `auction-tracker`.
 4. Framework preset: **Other**. Build command / output can stay empty — Vercel
    serves `public/` and builds the `api/` functions automatically.
 5. Add **Environment Variables** (Settings → Environment Variables):
