@@ -3,3 +3,4 @@ dist/
 debug/
 .env
 *.log
+.vercel

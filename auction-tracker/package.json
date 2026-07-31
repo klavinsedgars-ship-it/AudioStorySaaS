@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
     "start": "node dist/server/index.js",
-    "build": "tsc -p tsconfig.json && cp -r src/public dist/public",
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",

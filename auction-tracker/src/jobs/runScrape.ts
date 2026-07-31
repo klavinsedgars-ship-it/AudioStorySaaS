@@ -112,7 +112,7 @@ export interface SourceRunResult {
 
 /** Scrape a single source end-to-end: fetch -> persist -> queue matches. */
 export async function runSource(source: Source): Promise<SourceRunResult> {
-  const scraper = getScraper(source);
+  const scraper = await getScraper(source);
   const [run] = await db.insert(scrapeRuns).values({ source, status: "running" }).returning();
 
   try {

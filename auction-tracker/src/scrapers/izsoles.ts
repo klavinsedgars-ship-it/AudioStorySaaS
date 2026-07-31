@@ -1,4 +1,4 @@
-import { chromium, type Browser } from "playwright";
+import type { Browser } from "playwright";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { Scraper, ScrapeContext, ScrapedListing } from "./types.js";
@@ -143,6 +143,10 @@ export const izsolesScraper: Scraper = {
     const debugDumps: { url: string; sample: unknown }[] = [];
 
     try {
+      // Lazy-load Playwright so importing this module (e.g. inside a Vercel
+      // serverless function) never pulls in the browser dependency. Only the
+      // dedicated worker that actually runs izsoles needs Chromium installed.
+      const { chromium } = await import("playwright");
       browser = await chromium.launch({ headless: true });
       const page = await browser.newPage({
         userAgent:
